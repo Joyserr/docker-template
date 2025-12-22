@@ -5,7 +5,7 @@
 ## 📋 目录结构
 
 ```
-kudan_ws/
+docker_template/
 ├── docker/                     # Docker相关配置目录
 │   ├── Dockerfile              # Docker镜像构建文件
 │   ├── docker-compose.yml      # Docker Compose配置
