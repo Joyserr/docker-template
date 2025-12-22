@@ -49,6 +49,7 @@ RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-image-transport \
     ros-${ROS_DISTRO}-pcl-conversions \
     ros-${ROS_DISTRO}-pcl-ros \
+    ros-${ROS_DISTRO}-image-geometry \
     bash-completion \
     && rm -rf /var/lib/apt/lists/*
 
@@ -82,8 +83,8 @@ RUN echo "# ROS Environment Setup" >> ~/.bashrc && \
     echo "alias cw='cd ~/catkin_ws'" >> ~/.bashrc
 
 # 初始化rosdep
-RUN sudo rosdep init || true && \
-    rosdep update
+# RUN sudo rosdep init || true && \
+#     rosdep update
 
 # 默认启动bash
 CMD ["/bin/bash"]
