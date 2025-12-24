@@ -46,6 +46,7 @@ docker run -d \
     --network host \
     --privileged \
     -v ${WORKSPACE_DIR}:/home/${USER_NAME}/catkin_ws \
+    -v ${WORKSPACE_DIR}/docker/config/bashrc:/home/${USER_NAME}/.bashrc_docker:ro \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -e DISPLAY=${DISPLAY} \
     -e QT_X11_NO_MITSHM=1 \

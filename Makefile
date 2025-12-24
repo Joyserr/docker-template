@@ -7,7 +7,7 @@ DOCKER_DIR := docker
 DOCKERFILE := $(DOCKER_DIR)/Dockerfile
 COMPOSE_FILE := $(DOCKER_DIR)/docker-compose.yml
 
-.PHONY: help build run run-detach exec stop clean rebuild logs shell
+.PHONY: help init build run run-detach exec stop clean rebuild logs shell status ps
 
 # 默认目标
 .DEFAULT_GOAL := help
@@ -23,6 +23,9 @@ help: ## 显示帮助信息
 	@echo "  容器名称: $(CONTAINER_NAME)"
 	@echo "  ROS版本:  $(ROS_DISTRO)"
 	@echo "  用户信息: $(USER_NAME) (UID=$(USER_UID), GID=$(USER_GID))"
+
+init: ## 初始化环境配置（自动检测系统信息）
+	@./docker/scripts/init-env.sh
 
 build: ## 构建Docker镜像
 	@echo "==> 构建Docker镜像: $(IMAGE_NAME):$(IMAGE_TAG)"
@@ -46,6 +49,7 @@ run: ## 运行容器（交互式，退出后自动删除）
 		--network host \
 		--privileged \
 		-v $(WORKSPACE_DIR):/home/$(USER_NAME)/catkin_ws \
+		-v ${WORKSPACE_DIR}/docker/config/bashrc:/home/${USER_NAME}/.bashrc_docker:ro \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-e DISPLAY=$(DISPLAY) \
 		-e QT_X11_NO_MITSHM=1 \
@@ -59,6 +63,7 @@ run-detach: ## 后台运行容器
 		--network host \
 		--privileged \
 		-v $(WORKSPACE_DIR):/home/$(USER_NAME)/catkin_ws \
+		-v ${WORKSPACE_DIR}/docker/config/bashrc:/home/${USER_NAME}/.bashrc_docker:ro \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-e DISPLAY=$(DISPLAY) \
 		-e QT_X11_NO_MITSHM=1 \

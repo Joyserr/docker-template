@@ -70,17 +70,14 @@ WORKDIR /home/${USER_NAME}
 RUN mkdir -p ~/catkin_ws/src
 WORKDIR /home/${USER_NAME}/catkin_ws
 
-# 配置ROS环境
-RUN echo "# ROS Environment Setup" >> ~/.bashrc && \
-    echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc && \
-    echo "if [ -f ~/catkin_ws/devel/setup.bash ]; then" >> ~/.bashrc && \
-    echo "  source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc && \
-    echo "fi" >> ~/.bashrc && \
-    echo "" >> ~/.bashrc && \
-    echo "# Useful ROS aliases" >> ~/.bashrc && \
-    echo "alias cm='catkin_make'" >> ~/.bashrc && \
-    echo "alias cs='cd ~/catkin_ws/src'" >> ~/.bashrc && \
-    echo "alias cw='cd ~/catkin_ws'" >> ~/.bashrc
+# 复制自定义 bashrc 配置
+COPY --chown=${USER_NAME}:${USER_NAME} config/bashrc /home/${USER_NAME}/.bashrc_docker
+
+# 配置ROS环境（加载 Docker 专用配置）
+RUN echo "# Load Docker-specific ROS configuration" >> ~/.bashrc && \
+    echo "if [ -f ~/.bashrc_docker ]; then" >> ~/.bashrc && \
+    echo "    source ~/.bashrc_docker" >> ~/.bashrc && \
+    echo "fi" >> ~/.bashrc
 
 # 初始化rosdep
 # RUN sudo rosdep init || true && \

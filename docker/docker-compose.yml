@@ -24,8 +24,8 @@ services:
       - ${WORKSPACE_DIR}:/home/${USER_NAME}/catkin_ws
       # 挂载X11 socket用于GUI显示
       - /tmp/.X11-unix:/tmp/.X11-unix
-      # 可选: 挂载主机的.bashrc（如需要）
-      # - ~/.bashrc:/home/${USER_NAME}/.bashrc_host:ro
+      # 挂载自定义bashrc配置（可选，如果想在运行时修改）
+      - ./config/bashrc:/home/${USER_NAME}/.bashrc_docker:ro
     # 保持容器运行
     command: tail -f /dev/null
     # 可选: 资源限制
