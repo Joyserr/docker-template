@@ -1,11 +1,41 @@
+# ROS Noetic Docker Development Environment
+
+A Docker-based ROS Noetic development environment configuration that supports complete containerized development workflows.
+
+## 📋 Directory Structure
+
+```
+kudan_ws/
+├── docker/                     # Docker configuration directory
+│   ├── config/                  # Container configuration files
+│   │   └── bashrc              # Container-specific bashrc configuration
+│   ├── scripts/                # Shell scripts directory
+│   │   ├── init-env.sh         # Environment initialization script
+│   │   ├── docker-build.sh     # Build image script
+│   │   ├── docker-run.sh       # Run container script (interactive)
+│   │   ├── docker-run-detach.sh # Run container in background
+│   │   ├── docker-exec.sh      # Enter container script
+│   │   └── docker-stop.sh      # Stop container script
+│   ├── Dockerfile              # Docker image build file
+│   ├── docker-compose.yml      # Docker Compose configuration
+│   ├── requirements.txt        # Python dependencies list
+│   └── .env                    # Environment variables configuration
+├── Makefile                    # Make commands (recommended)
+├── README.md                   # Documentation (Chinese)
+├── README_EN.md                # This document (English)
+└── src/                        # ROS workspace source directory
+```
 
 ## ✨ Features
 
-- ✅ **Permission Consistency**: Container user UID/GID matches host to avoid file permission issues
-- ✅ **GUI Support**: Supports GUI tools like RViz and rqt (via X11 forwarding)
-- ✅ **Workspace Mounting**: Real-time synchronization of host workspace to container
-- ✅ **Network Interoperability**: Uses host network mode to simplify ROS node communication
-- ✅ **Multiple Usage Options**: Supports Makefile, Shell scripts, and Docker Compose
+- ✅ **Automated Configuration**: Auto-detect user information and workspace path
+- ✅ **Python Dependency Management**: Support automatic installation via requirements.txt
+- ✅ **Rich Shortcuts**: Pre-configured bash aliases and functions in container
+- ✅ **Permission Consistency**: Container user UID/GID matches host to avoid permission issues
+- ✅ **GUI Support**: Support RViz, rqt and other GUI tools (via X11 forwarding)
+- ✅ **Workspace Mounting**: Host workspace syncs to container in real-time
+- ✅ **Network Interconnection**: Use host network mode to simplify ROS node communication
+- ✅ **Multiple Usage Methods**: Support Makefile, Shell scripts, Docker Compose
 
 ## 🚀 Quick Start
 
@@ -15,12 +45,30 @@
 - Docker Compose installed (optional)
 - Make tool (optional, recommended)
 
-### 1. Configure Environment Variables
+### 1. Initialize Environment Configuration (Recommended)
 
-View and modify the `docker/.env` file as needed:
+Automatically detect and configure environment variables:
 
 ```bash
-# User configuration (automatically configured for current host user)
+# Using Makefile (recommended)
+make init
+
+# Or run script directly
+./docker/scripts/init-env.sh
+```
+
+This command will automatically:
+- Detect current username, UID, GID
+- Detect workspace path
+- Generate `docker/.env` configuration file
+- Backup existing configuration (if exists)
+
+**Manual Configuration (Optional)**
+
+If not using auto-initialization, you can manually view and modify the `docker/.env` file:
+
+```bash
+# User configuration (auto-generated)
 USER_NAME=duboping
 USER_UID=1000
 USER_GID=1000
@@ -30,14 +78,28 @@ IMAGE_NAME=ros-kudan-dev
 IMAGE_TAG=latest
 CONTAINER_NAME=kudan_ws_container
 
-# ROS distribution configuration
+# ROS version configuration
 ROS_DISTRO=noetic
 
-# Workspace path
+# Workspace path (auto-generated)
 WORKSPACE_DIR=/home/duboping/public/kudan/kudan_ws
 ```
 
-### 2. Build Docker Image
+### 2. Configure Python Dependencies (Optional)
+
+If you need to install additional Python packages, edit the `docker/requirements.txt` file:
+
+```bash
+# Uncomment and add required packages
+numpy>=1.19.0
+matplotlib>=3.3.0
+opencv-python>=4.5.0
+# ... add more packages
+```
+
+Dependencies will be automatically installed during image build.
+
+### 3. Build Docker Image
 
 **Method 1: Using Makefile (Recommended)**
 
@@ -58,9 +120,9 @@ cd docker
 docker-compose build
 ```
 
-### 3. Run Container
+### 4. Run Container
 
-**Method 1: Interactive Run (Container auto-deletes on exit)**
+**Method 1: Interactive Mode (auto-remove after exit)**
 
 ```bash
 # Using Makefile
@@ -70,7 +132,7 @@ make run
 ./docker/scripts/docker-run.sh
 ```
 
-**Method 2: Background Run**
+**Method 2: Background Mode**
 
 ```bash
 # Using Makefile
@@ -84,9 +146,9 @@ cd docker
 docker-compose up -d
 ```
 
-### 4. Enter Container
+### 5. Enter Container
 
-If the container is running in the background, use the following commands to enter:
+If the container is running in background, use the following commands to enter:
 
 ```bash
 # Using Makefile
@@ -100,7 +162,7 @@ cd docker
 docker-compose exec ros-dev bash
 ```
 
-## 📖 Detailed Usage Instructions
+## 📖 Detailed Usage
 
 ### Makefile Commands
 
@@ -110,11 +172,12 @@ View all available commands:
 make help
 ```
 
-Common Commands:
+Common commands:
 
 | Command | Description |
 |---------|-------------|
-| `make help` | Display help information |
+| `make help` | Show help information |
+| `make init` | Initialize environment configuration (auto-detect system info) |
 | `make build` | Build Docker image |
 | `make run` | Run container (interactive) |
 | `make run-detach` | Run container in background |
@@ -149,7 +212,7 @@ All scripts are located in the `docker/scripts/` directory with executable permi
 ### Docker Compose Usage
 
 ```bash
-# Navigate to docker directory
+# Enter docker directory
 cd docker
 
 # Build and start
@@ -168,11 +231,11 @@ docker-compose down
 docker-compose build --no-cache
 ```
 
-## 🔧 Development Inside Container
+## 🔧 Container Development
 
 ### ROS Environment
 
-ROS environment is automatically configured inside the container and ready to use upon startup:
+ROS environment is automatically configured in the container:
 
 ```bash
 # Check ROS environment
@@ -189,26 +252,61 @@ catkin_make
 catkin build
 ```
 
-### Predefined Aliases
+### Pre-configured Aliases and Shortcuts
 
-The following bash aliases are configured inside the container:
+Rich bash aliases and shortcuts are configured in the container:
 
+**Workspace Navigation:**
 ```bash
-cm    # catkin_make
-cs    # cd ~/catkin_ws/src
 cw    # cd ~/catkin_ws
+cs    # cd ~/catkin_ws/src
+```
+
+**Build Commands:**
+```bash
+cm       # catkin_make
+cb       # catkin build
+remake   # Clean and rebuild
+soc      # Reload environment
+```
+
+**ROS Command Aliases:**
+```bash
+rt       # rostopic
+rn       # rosnode
+rp       # rosparam
+rs       # rosservice
+rl       # roslaunch
+rr       # rosrun
+```
+
+**Utility Functions:**
+```bash
+create_ros_pkg <name> [deps]  # Quickly create ROS package
+find_pkg <name>               # Find package path
+topic_echo <topic>            # Quick topic monitoring
 ```
 
 ### Install Additional Dependencies
 
+**Install ROS Packages:**
 ```bash
-# Install ROS packages
 sudo apt-get update
 sudo apt-get install ros-noetic-<package-name>
+```
 
-# Install dependencies using rosdep
+**Use rosdep to Install Dependencies:**
+```bash
 cd ~/catkin_ws
 rosdep install --from-paths src --ignore-src -r -y
+```
+
+**Install Python Packages:**
+```bash
+# Inside container
+pip3 install --user <package-name>
+
+# Or edit docker/requirements.txt before building image
 ```
 
 ## 🖥️ GUI Application Support
@@ -216,7 +314,7 @@ rosdep install --from-paths src --ignore-src -r -y
 ### RViz Example
 
 ```bash
-# Run inside container
+# Run in container
 roscore &
 rviz
 ```
@@ -224,7 +322,7 @@ rviz
 ### rqt Tools
 
 ```bash
-# Run inside container
+# Run in container
 rqt
 ```
 
@@ -234,11 +332,11 @@ If you encounter GUI display issues, execute on the host:
 xhost +local:docker
 ```
 
-## 📝 Common Issues
+## 📝 FAQ
 
 ### 1. Permission Issues
 
-**Problem**: Files created inside container are inaccessible on host
+**Problem**: Files created in container cannot be accessed on host
 
 **Solution**: Ensure `USER_UID` and `USER_GID` in `.env` file match host user. Check with:
 
@@ -247,11 +345,11 @@ id -u  # Check UID
 id -g  # Check GID
 ```
 
-### 2. GUI Not Displaying
+### 2. GUI Cannot Display
 
-**Problem**: RViz or rqt won't start
+**Problem**: RViz or rqt cannot start
 
-**Solution**: Allow Docker to access X11 on host:
+**Solution**: Allow Docker to access X11 on the host:
 
 ```bash
 xhost +local:docker
@@ -265,11 +363,11 @@ ssh -X user@host
 
 ### 3. Network Connection Issues
 
-**Problem**: ROS nodes can't communicate
+**Problem**: ROS nodes cannot communicate
 
-**Solution**: Ensure container uses `--network host` mode (already set in config files)
+**Solution**: Ensure container uses `--network host` mode (already set in config)
 
-### 4. Container Name Conflicts
+### 4. Container Name Conflict
 
 **Problem**: Container name already exists
 
@@ -286,16 +384,19 @@ docker stop kudan_ws_container && docker rm kudan_ws_container
 ### Typical Development Workflow
 
 ```bash
-# 1. Build image (first time or after Dockerfile modification)
+# 1. Initialize environment (first time only)
+make init
+
+# 2. Build image (first time or after Dockerfile changes)
 make build
 
-# 2. Start container in background
+# 3. Start container in background
 make run-detach
 
-# 3. Enter container
+# 4. Enter container
 make exec
 
-# 4. Develop inside container
+# 5. Develop inside container
 cd ~/catkin_ws/src
 # ... write code ...
 cd ~/catkin_ws
@@ -303,17 +404,17 @@ catkin_make
 source devel/setup.bash
 rosrun <package> <node>
 
-# 5. Exit container (container continues running)
+# 6. Exit container (container continues running)
 exit
 
-# 6. Re-enter when needed
+# 7. Re-enter when needed
 make exec
 
-# 7. Stop container when done
+# 8. Stop container when done
 make stop
 ```
 
-### Multi-terminal Work
+### Multi-terminal Workflow
 
 ```bash
 # Terminal 1: Start roscore
@@ -321,23 +422,23 @@ make run-detach
 make exec
 roscore
 
-# Terminal 2: Run node
+# Terminal 2: Run nodes
 make exec
 rosrun <package> <node>
 
-# Terminal 3: View topics
+# Terminal 3: Monitor topics
 make exec
 rostopic list
 ```
 
 ## 📦 Custom Configuration
 
-### Change ROS Version
+### Modify ROS Version
 
 Edit `.env` file:
 
 ```bash
-ROS_DISTRO=melodic  # or foxy, humble, etc.
+ROS_DISTRO=melodic  # Or foxy, humble, etc.
 ```
 
 Then rebuild:
@@ -346,7 +447,7 @@ Then rebuild:
 make rebuild
 ```
 
-### Add Extra Packages
+### Add Additional Packages
 
 Edit `Dockerfile`, add required packages in the `RUN apt-get install` section:
 
@@ -367,14 +468,14 @@ volumes:
   - /path/on/host:/path/in/container  # Add new mount
 ```
 
-## 🛡️ Notes
+## 🛡️ Important Notes
 
-1. **Data Persistence**: Container's `~/catkin_ws` directory is mounted to host, data is automatically saved
-2. **Container Deletion**: Containers with `--rm` flag auto-delete on exit, but mounted data is preserved
-3. **Privileged Mode**: Container uses `--privileged` mode to support hardware access, be aware of security
-4. **Network Mode**: Uses host network mode, container shares network stack with host
+1. **Data Persistence**: The `~/catkin_ws` directory in container is mounted to host, data is automatically saved
+2. **Container Deletion**: Containers with `--rm` flag are auto-removed after exit, but mounted data persists
+3. **Privileged Mode**: Container uses `--privileged` mode to support certain hardware access, be aware of security
+4. **Network Mode**: Using host network mode, container shares network stack with host
 
-## 📚 Reference Resources
+## 📚 References
 
 - [ROS Noetic Official Documentation](http://wiki.ros.org/noetic)
 - [Docker Official Documentation](https://docs.docker.com/)
@@ -382,9 +483,9 @@ volumes:
 
 ## 📄 License
 
-This project configuration follows the MIT License.
+This project configuration follows MIT License.
 
-## 🤝 Contribution
+## 🤝 Contributing
 
 Issues and Pull Requests are welcome!
 

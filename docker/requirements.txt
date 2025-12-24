@@ -1,0 +1,29 @@
+# Python dependencies for ROS Noetic Docker environment
+# Add your Python packages here, one per line
+
+# Common ROS Python packages
+# numpy>=1.19.0
+# scipy>=1.5.0
+# matplotlib>=3.3.0
+# opencv-python>=4.5.0
+
+# Deep Learning frameworks (uncomment if needed)
+# torch>=1.8.0
+# torchvision>=0.9.0
+# tensorflow>=2.4.0
+
+# Computer Vision
+# pillow>=8.0.0
+# scikit-image>=0.18.0
+
+# Data Processing
+# pandas>=1.2.0
+# scikit-learn>=0.24.0
+
+# Utilities
+# pyyaml>=5.4.0
+# tqdm>=4.60.0
+
+# ROS specific Python packages
+# rospy (already installed with ROS)
+# rospkg (already installed with ROS)

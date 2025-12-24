@@ -66,6 +66,11 @@ RUN groupadd -g ${USER_GID} ${USER_NAME} || true && \
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
+# 安装 Python 依赖（在创建工作空间之前）
+COPY --chown=${USER_NAME}:${USER_NAME} requirements.txt /tmp/requirements.txt
+RUN pip3 install --user --no-cache-dir -r /tmp/requirements.txt || true && \
+    rm /tmp/requirements.txt
+
 # 设置ROS工作空间
 RUN mkdir -p ~/catkin_ws/src
 WORKDIR /home/${USER_NAME}/catkin_ws
