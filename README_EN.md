@@ -54,7 +54,7 @@ Automatically detect and configure environment variables:
 make init
 
 # Or run script directly
-./docker/scripts/init-env.sh
+./docker/scripts/utils/init-env.sh
 ```
 
 This command will automatically:
@@ -110,7 +110,7 @@ make build
 **Method 2: Using Shell Script**
 
 ```bash
-./docker/scripts/docker-build.sh
+./docker/scripts/build/docker-build.sh
 ```
 
 **Method 3: Using Docker Compose**
@@ -129,7 +129,7 @@ docker-compose build
 make run
 
 # Using Shell script
-./docker/scripts/docker-run.sh
+./docker/scripts/run/docker-run.sh
 ```
 
 **Method 2: Background Mode**
@@ -139,7 +139,7 @@ make run
 make run-detach
 
 # Using Shell script
-./docker/scripts/docker-run-detach.sh
+./docker/scripts/run/docker-run-detach.sh
 
 # Using Docker Compose
 cd docker
@@ -155,7 +155,7 @@ If the container is running in background, use the following commands to enter:
 make exec
 
 # Using Shell script
-./docker/scripts/docker-exec.sh
+./docker/scripts/run/docker-exec.sh
 
 # Using Docker Compose
 cd docker
@@ -190,23 +190,23 @@ Common commands:
 
 ### Shell Script Usage
 
-All scripts are located in the `docker/scripts/` directory with executable permissions:
+All scripts are located in subdirectories under `docker/scripts/` with executable permissions:
 
 ```bash
 # Build image
-./docker/scripts/docker-build.sh
+./docker/scripts/build/docker-build.sh
 
 # Run container (interactive)
-./docker/scripts/docker-run.sh
+./docker/scripts/run/docker-run.sh
 
 # Run container in background
-./docker/scripts/docker-run-detach.sh
+./docker/scripts/run/docker-run-detach.sh
 
 # Enter container
-./docker/scripts/docker-exec.sh
+./docker/scripts/run/docker-exec.sh
 
 # Stop container
-./docker/scripts/docker-stop.sh
+./docker/scripts/run/docker-stop.sh
 ```
 
 ### Docker Compose Usage

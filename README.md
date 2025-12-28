@@ -10,18 +10,27 @@ kudan_ws/
 │   ├── config/                  # 容器配置文件目录
 │   │   └── bashrc              # 容器专用 bashrc 配置
 │   ├── scripts/                # Shell脚本目录
-│   │   ├── init-env.sh         # 初始化环境脚本
-│   │   ├── docker-build.sh     # 构建镜像脚本
-│   │   ├── docker-run.sh       # 运行容器脚本（交互式）
-│   │   ├── docker-run-detach.sh # 后台运行容器脚本
-│   │   ├── docker-exec.sh      # 进入容器脚本
-│   │   └── docker-stop.sh      # 停止容器脚本
+│   │   ├── utils/              # 公共函数库
+│   │   │   ├── common.sh       # 通用函数库
+│   │   │   └── init-env.sh     # 初始化环境脚本
+│   │   ├── build/              # 构建相关脚本
+│   │   │   ├── docker-build.sh     # 构建镜像脚本
+│   │   │   └── docker-rebuild.sh   # 清理并重新构建镜像
+│   │   └── run/                # 运行相关脚本
+│   │       ├── docker-run.sh       # 运行容器脚本（交互式）
+│   │       ├── docker-run-detach.sh # 后台运行容器脚本
+│   │       ├── docker-exec.sh      # 进入容器脚本
+│   │       ├── docker-stop.sh      # 停止容器脚本
+│   │       ├── docker-clean.sh     # 清理容器和镜像
+│   │       ├── docker-logs.sh      # 查看容器日志
+│   │       └── docker-status.sh    # 查看容器状态
 │   ├── Dockerfile              # Docker镜像构建文件
 │   ├── docker-compose.yml      # Docker Compose配置
 │   ├── requirements.txt        # Python依赖包列表
 │   └── .env                    # 环境变量配置文件
 ├── Makefile                    # Make命令集合（推荐使用）
 ├── README.md                   # 本文档
+├── MAKEFILE_OPTIMIZATION.md    # Makefile优化总结文档
 └── src/                        # ROS工作空间源码目录
 ```
 
@@ -35,6 +44,31 @@ kudan_ws/
 - ✅ **工作空间挂载**: 主机工作空间实时同步到容器
 - ✅ **网络互通**: 使用 host 网络模式，简化 ROS 节点通信
 - ✅ **多种使用方式**: 支持 Makefile、Shell 脚本、Docker Compose
+- ✅ **统一架构**: Makefile作为命令入口，scripts作为功能实现，消除功能重复
+
+## 🏗️ 架构设计
+
+本项目采用统一的架构设计，Makefile作为命令入口，所有功能实现都在docker/scripts/目录下的脚本中完成：
+
+```
+用户命令 (make xxx)
+    ↓
+Makefile (命令路由)
+    ↓
+docker/scripts/ (功能实现)
+    ↓
+common.sh (公共函数库)
+    ↓
+Docker命令
+```
+
+这种设计的优势：
+- **消除重复**: 同一功能只有一套实现，修改只需改一处
+- **一致性**: 所有命令使用相同的输出格式和错误处理
+- **可维护**: 功能实现统一在scripts中，易于维护和扩展
+- **向后兼容**: 用户仍然使用`make xxx`命令，不改变使用习惯
+
+详细的优化说明请参考 [MAKEFILE_OPTIMIZATION.md](/Users/king/code/colcon_ws/src/docker-template/MAKEFILE_OPTIMIZATION.md)。
 
 ## 🚀 快速开始
 
@@ -53,7 +87,7 @@ kudan_ws/
 make init
 
 # 或直接运行脚本
-./docker/scripts/init-env.sh
+./docker/scripts/utils/init-env.sh
 ```
 
 该命令会自动：
@@ -109,7 +143,7 @@ make build
 **方式二：使用 Shell 脚本**
 
 ```bash
-./docker/scripts/docker-build.sh
+./docker/scripts/build/docker-build.sh
 ```
 
 **方式三：使用 Docker Compose**
@@ -128,7 +162,7 @@ docker-compose build
 make run
 
 # 使用 Shell 脚本
-./docker/scripts/docker-run.sh
+./docker/scripts/run/docker-run.sh
 ```
 
 **方式二：后台运行**
@@ -138,7 +172,7 @@ make run
 make run-detach
 
 # 使用 Shell 脚本
-./docker/scripts/docker-run-detach.sh
+./docker/scripts/run/docker-run-detach.sh
 
 # 使用 Docker Compose
 cd docker
@@ -154,7 +188,7 @@ docker-compose up -d
 make exec
 
 # 使用 Shell 脚本
-./docker/scripts/docker-exec.sh
+./docker/scripts/run/docker-exec.sh
 
 # 使用 Docker Compose
 cd docker
@@ -171,42 +205,84 @@ docker-compose exec ros-dev bash
 make help
 ```
 
-常用命令：
+**基础命令：**
 
 | 命令 | 说明 |
 |------|------|
-| `make help` | 显示帮助信息 |
+| `make help` | 显示帮助信息和所有可用命令 |
 | `make init` | 初始化环境配置（自动检测系统信息） |
 | `make build` | 构建 Docker 镜像 |
+| `make rebuild` | 清理并重新构建镜像 |
+
+**容器管理命令：**
+
+| 命令 | 说明 |
+|------|------|
 | `make run` | 运行容器（交互式） |
 | `make run-detach` | 后台运行容器 |
 | `make exec` | 进入运行中的容器 |
 | `make stop` | 停止并删除容器 |
-| `make clean` | 清理容器和镜像 |
-| `make rebuild` | 清理并重新构建镜像 |
-| `make logs` | 查看容器日志 |
 | `make status` | 查看容器状态 |
+| `make logs` | 查看容器日志 |
+| `make clean` | 清理容器和镜像 |
+
+**多架构构建命令：**
+
+| 命令 | 说明 |
+|------|------|
+| `make build-all` | 构建所有架构镜像 |
+| `make build-multiarch` | 构建多架构镜像 |
+| `make build-amd64` | 构建 AMD64 架构镜像 |
+| `make build-arm64` | 构建 ARM64 架构镜像 |
+| `make setup-buildx` | 设置 Buildx 构建器 |
+| `make list-platforms` | 列出支持的平台 |
 
 ### Shell 脚本使用
 
-所有脚本都位于 `docker/scripts/` 目录下，已添加可执行权限：
+所有脚本都位于 `docker/scripts/` 目录下的子目录中，已添加可执行权限：
+
+**构建相关脚本：**
 
 ```bash
 # 构建镜像
-./docker/scripts/docker-build.sh
+./docker/scripts/build/docker-build.sh
 
+# 清理并重新构建镜像
+./docker/scripts/build/docker-rebuild.sh
+```
+
+**运行相关脚本：**
+
+```bash
 # 运行容器（交互式）
-./docker/scripts/docker-run.sh
+./docker/scripts/run/docker-run.sh
 
 # 后台运行容器
-./docker/scripts/docker-run-detach.sh
+./docker/scripts/run/docker-run-detach.sh
 
 # 进入容器
-./docker/scripts/docker-exec.sh
+./docker/scripts/run/docker-exec.sh
 
 # 停止容器
-./docker/scripts/docker-stop.sh
+./docker/scripts/run/docker-stop.sh
+
+# 清理容器和镜像
+./docker/scripts/run/docker-clean.sh
+
+# 查看容器日志
+./docker/scripts/run/docker-logs.sh
+
+# 查看容器状态
+./docker/scripts/run/docker-status.sh
 ```
+
+**公共函数库：**
+
+所有脚本都使用 `docker/scripts/utils/common.sh` 中的公共函数，包括：
+- `load_env_vars()` - 加载环境变量
+- `print_info()`, `print_success()`, `print_warning()`, `print_error()` - 格式化输出
+- `check_docker_container()`, `check_docker_container_exists()` - 容器状态检查
+- `get_docker_dir()`, `get_project_root()` - 路径解析函数
 
 ### Docker Compose 使用
 

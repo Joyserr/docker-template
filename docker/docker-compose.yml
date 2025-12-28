@@ -1,39 +1,104 @@
 version: '3.8'
 
+x-common-service: &common-service
+  network_mode: host
+  privileged: true
+  stdin_open: true
+  tty: true
+  environment:
+    - DISPLAY=${DISPLAY:-:0}
+    - QT_X11_NO_MITSHM=1
+  volumes:
+    - ${WORKSPACE_DIR:-..}:/home/${USER_NAME:-user}/catkin_ws
+    - /tmp/.X11-unix:/tmp/.X11-unix
+    - ./config/bashrc:/home/${USER_NAME:-user}/.bashrc_docker:ro
+  command: tail -f /dev/null
+
 services:
+  # 默认服务（当前系统架构）
   ros-dev:
+    env_file:
+      - ./config/.env
     build:
       context: ..
       dockerfile: docker/Dockerfile
       args:
-        ROS_DISTRO: ${ROS_DISTRO}
-        USER_NAME: ${USER_NAME}
-        USER_UID: ${USER_UID}
-        USER_GID: ${USER_GID}
-    image: ${IMAGE_NAME}:${IMAGE_TAG}
-    container_name: ${CONTAINER_NAME}
-    network_mode: host
-    privileged: true
-    stdin_open: true
-    tty: true
+        ROS_DISTRO: ${ROS_DISTRO:-noetic}
+        USER_NAME: ${USER_NAME:-user}
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+    image: ${IMAGE_NAME:-ros-dev}:${IMAGE_TAG:-latest}
+    container_name: ${CONTAINER_NAME:-ros-dev-container}
+    <<: *common-service
+
+  # AMD64平台服务
+  ros-dev-amd64:
+    env_file:
+      - ./config/.env
+    <<: *common-service
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        ROS_DISTRO: ${ROS_DISTRO:-noetic}
+        USER_NAME: ${USER_NAME:-user}
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+        TARGETPLATFORM: linux/amd64
+    image: ${IMAGE_NAME:-ros-dev}:${IMAGE_TAG:-latest}-amd64
+    container_name: ${CONTAINER_NAME:-ros-dev-container}-amd64
+    platform: linux/amd64
     environment:
-      - DISPLAY=${DISPLAY}
+      - DISPLAY=${DISPLAY:-:0}
       - QT_X11_NO_MITSHM=1
-    volumes:
-      # 挂载工作空间
-      - ${WORKSPACE_DIR}:/home/${USER_NAME}/catkin_ws
-      # 挂载X11 socket用于GUI显示
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      # 挂载自定义bashrc配置（可选，如果想在运行时修改）
-      - ./config/bashrc:/home/${USER_NAME}/.bashrc_docker:ro
-    # 保持容器运行
-    command: tail -f /dev/null
-    # 可选: 资源限制
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '4'
-    #       memory: 8G
-    #     reservations:
-    #       cpus: '2'
-    #       memory: 4G
+      - TARGETPLATFORM=linux/amd64
+    profiles:
+      - amd64
+
+  # ARM64平台服务
+  ros-dev-arm64:
+    env_file:
+      - ./config/.env
+    <<: *common-service
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        ROS_DISTRO: ${ROS_DISTRO:-noetic}
+        USER_NAME: ${USER_NAME:-user}
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+        TARGETPLATFORM: linux/arm64
+    image: ${IMAGE_NAME:-ros-dev}:${IMAGE_TAG:-latest}-arm64
+    container_name: ${CONTAINER_NAME:-ros-dev-container}-arm64
+    platform: linux/arm64
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_X11_NO_MITSHM=1
+      - TARGETPLATFORM=linux/arm64
+    profiles:
+      - arm64
+
+  # ARMv7平台服务
+  ros-dev-armv7:
+    env_file:
+      - ./config/.env
+    <<: *common-service
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        ROS_DISTRO: ${ROS_DISTRO:-noetic}
+        USER_NAME: ${USER_NAME:-user}
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+        TARGETPLATFORM: linux/arm/v7
+    image: ${IMAGE_NAME:-ros-dev}:${IMAGE_TAG:-latest}-armv7
+    container_name: ${CONTAINER_NAME:-ros-dev-container}-armv7
+    platform: linux/arm/v7
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_X11_NO_MITSHM=1
+      - TARGETPLATFORM=linux/arm/v7
+    profiles:
+      - armv7

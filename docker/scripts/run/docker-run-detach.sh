@@ -3,35 +3,28 @@
 
 set -e
 
-# 脚本目录
+# 加载公共函数库
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOCKER_DIR="$(dirname "$SCRIPT_DIR")"
+source "$SCRIPT_DIR/../utils/common.sh"
 
 # 加载环境变量
-if [ -f "$DOCKER_DIR/.env" ]; then
-    export $(cat "$DOCKER_DIR/.env" | grep -v '^#' | xargs)
-else
-    echo "错误: 未找到 $DOCKER_DIR/.env 文件"
-    exit 1
-fi
+load_env_vars
+
+# 获取Docker目录
+DOCKER_DIR=$(get_docker_dir)
 
 # 允许X11转发
 xhost +local:docker > /dev/null 2>&1 || true
 
-echo "=========================================="
-echo "后台启动 ROS Noetic Docker 容器"
-echo "=========================================="
+print_title "后台启动 ROS Noetic Docker 容器"
 echo "容器名称: ${CONTAINER_NAME}"
 echo "工作空间: ${WORKSPACE_DIR}"
-echo "=========================================="
 echo ""
 
 # 检查容器是否已经在运行
-if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+if check_docker_container_exists "${CONTAINER_NAME}"; then
     echo "警告: 容器 ${CONTAINER_NAME} 已存在"
-    read -p "是否删除现有容器并重新启动? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if confirm_action "是否删除现有容器并重新启动?"; then
         docker stop ${CONTAINER_NAME} 2>/dev/null || true
         docker rm ${CONTAINER_NAME} 2>/dev/null || true
     else
@@ -58,7 +51,7 @@ echo "=========================================="
 echo "容器已在后台运行"
 echo "=========================================="
 echo "使用以下命令进入容器:"
-echo "  ./docker/scripts/docker-exec.sh"
+echo "  ./docker/scripts/run/docker-exec.sh"
 echo "或使用 make:"
 echo "  make exec"
 echo "=========================================="

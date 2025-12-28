@@ -3,15 +3,16 @@
 
 set -e
 
-# 脚本目录
+# 加载公共函数库
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOCKER_DIR="$(dirname "$SCRIPT_DIR")"
-PROJECT_ROOT="$(dirname "$DOCKER_DIR")"
-ENV_FILE="$DOCKER_DIR/.env"
+source "$SCRIPT_DIR/common.sh"
 
-echo "=========================================="
-echo "Docker 环境初始化"
-echo "=========================================="
+# 获取目录路径
+DOCKER_DIR=$(get_docker_dir)
+PROJECT_ROOT=$(get_project_root)
+ENV_FILE="$DOCKER_DIR/config/.env"
+
+print_title "Docker 环境初始化"
 
 # 自动检测用户信息
 DETECTED_USER=$(whoami)
