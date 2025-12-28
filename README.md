@@ -1,566 +1,845 @@
-# ROS Noetic Docker 开发环境
+# 通用Docker开发环境模板
 
-这是一个基于 Docker 的 ROS Noetic 开发环境配置，支持完整的容器化开发工作流程。
+这是一个灵活的Docker开发环境模板，可以轻松修改以构建和使用任意类型的Docker镜像。
 
-## 📋 目录结构
+## 特性
 
-```
-kudan_ws/
-├── docker/                     # Docker相关配置目录
-│   ├── config/                  # 容器配置文件目录
-│   │   └── bashrc              # 容器专用 bashrc 配置
-│   ├── scripts/                # Shell脚本目录
-│   │   ├── utils/              # 公共函数库
-│   │   │   ├── common.sh       # 通用函数库
-│   │   │   └── init-env.sh     # 初始化环境脚本
-│   │   ├── build/              # 构建相关脚本
-│   │   │   ├── docker-build.sh     # 构建镜像脚本
-│   │   │   └── docker-rebuild.sh   # 清理并重新构建镜像
-│   │   └── run/                # 运行相关脚本
-│   │       ├── docker-run.sh       # 运行容器脚本（交互式）
-│   │       ├── docker-run-detach.sh # 后台运行容器脚本
-│   │       ├── docker-exec.sh      # 进入容器脚本
-│   │       ├── docker-stop.sh      # 停止容器脚本
-│   │       ├── docker-clean.sh     # 清理容器和镜像
-│   │       ├── docker-logs.sh      # 查看容器日志
-│   │       └── docker-status.sh    # 查看容器状态
-│   ├── Dockerfile              # Docker镜像构建文件
-│   ├── docker-compose.yml      # Docker Compose配置
-│   ├── requirements.txt        # Python依赖包列表
-│   └── .env                    # 环境变量配置文件
-├── Makefile                    # Make命令集合（推荐使用）
-├── README.md                   # 本文档
-├── MAKEFILE_OPTIMIZATION.md    # Makefile优化总结文档
-└── src/                        # ROS工作空间源码目录
-```
+- 🚀 **简单易用** - 只需修改配置文件和Dockerfile即可
+- 🔧 **高度可定制** - 支持任意基础镜像和依赖
+- 👤 **用户友好** - 自动匹配主机用户，避免权限问题
+- 📦 **开箱即用** - 提供常用开发工具和配置
+- 🎯 **灵活扩展** - 可根据需要添加任何开发环境
 
-## ✨ 特性
+## 快速开始
 
-- ✅ **自动化配置**: 自动检测用户信息和工作空间路径
-- ✅ **Python 依赖管理**: 支持 requirements.txt 自动安装
-- ✅ **丰富的快捷命令**: 容器内预设丰富的 bash 别名和函数
-- ✅ **权限一致性**: 容器内用户 UID/GID 与主机一致，避免文件权限问题
-- ✅ **GUI 支持**: 支持 RViz、rqt 等 GUI 工具（通过 X11 转发）
-- ✅ **工作空间挂载**: 主机工作空间实时同步到容器
-- ✅ **网络互通**: 使用 host 网络模式，简化 ROS 节点通信
-- ✅ **多种使用方式**: 支持 Makefile、Shell 脚本、Docker Compose
-- ✅ **统一架构**: Makefile作为命令入口，scripts作为功能实现，消除功能重复
-
-## 🏗️ 架构设计
-
-本项目采用统一的架构设计，Makefile作为命令入口，所有功能实现都在docker/scripts/目录下的脚本中完成：
-
-```
-用户命令 (make xxx)
-    ↓
-Makefile (命令路由)
-    ↓
-docker/scripts/ (功能实现)
-    ↓
-common.sh (公共函数库)
-    ↓
-Docker命令
-```
-
-这种设计的优势：
-- **消除重复**: 同一功能只有一套实现，修改只需改一处
-- **一致性**: 所有命令使用相同的输出格式和错误处理
-- **可维护**: 功能实现统一在scripts中，易于维护和扩展
-- **向后兼容**: 用户仍然使用`make xxx`命令，不改变使用习惯
-
-详细的优化说明请参考 [MAKEFILE_OPTIMIZATION.md](/Users/king/code/colcon_ws/src/docker-template/MAKEFILE_OPTIMIZATION.md)。
-
-## 🚀 快速开始
-
-### 前置要求
-
-- Docker 已安装（版本 >= 19.03）
-- Docker Compose 已安装（可选）
-- Make 工具（可选，推荐）
-
-### 1. 初始化环境配置（推荐）
-
-自动检测并配置环境变量：
+### 1. 克隆或复制此模板
 
 ```bash
-# 使用 Makefile（推荐）
-make init
-
-# 或直接运行脚本
-./docker/scripts/utils/init-env.sh
+git clone <your-repo-url>
+cd docker-template
 ```
 
-该命令会自动：
-- 检测当前用户名、UID、GID
-- 检测工作空间路径
-- 生成 `docker/.env` 配置文件
-- 备份现有配置（如果存在）
+### 2. 配置环境变量
 
-**手动配置（可选）**
-
-如果不使用自动初始化，也可以手动查看并修改 `docker/.env` 文件：
+编辑 `docker/config/.env` 文件，修改以下参数：
 
 ```bash
-# 用户配置（自动生成）
-USER_NAME=duboping
+# 用户配置（与主机用户保持一致）
+USER_NAME=your-username
 USER_UID=1000
 USER_GID=1000
 
 # Docker镜像配置
-IMAGE_NAME=ros-kudan-dev
+IMAGE_NAME=my-dev-image
 IMAGE_TAG=latest
-CONTAINER_NAME=kudan_ws_container
+CONTAINER_NAME=my_dev_container
 
-# ROS版本配置
-ROS_DISTRO=noetic
-
-# 工作空间路径（自动生成）
-WORKSPACE_DIR=/home/duboping/public/kudan/kudan_ws
+# 工作空间目录
+WORKSPACE_DIR=/path/to/your/workspace
 ```
 
-### 2. 配置 Python 依赖（可选）
+### 3. 定制Dockerfile
 
-如果需要安装额外的 Python 包，编辑 `docker/requirements.txt` 文件：
+编辑 `docker/Dockerfile` 文件，根据需要：
 
-```bash
-# 取消注释并添加需要的包
-numpy>=1.19.0
-matplotlib>=3.3.0
-opencv-python>=4.5.0
-# ... 添加更多包
-```
+- 修改基础镜像（FROM语句）
+- 安装所需的依赖和工具
+- 配置开发环境
 
-镜像构建时会自动安装这些依赖。
-
-### 3. 构建 Docker 镜像
-
-**方式一：使用 Makefile（推荐）**
-
-```bash
-make build
-```
-
-**方式二：使用 Shell 脚本**
-
-```bash
-./docker/scripts/build/docker-build.sh
-```
-
-**方式三：使用 Docker Compose**
-
-```bash
-cd docker
-docker-compose build
-```
-
-### 4. 运行容器
-
-**方式一：交互式运行（退出后自动删除容器）**
-
-```bash
-# 使用 Makefile
-make run
-
-# 使用 Shell 脚本
-./docker/scripts/run/docker-run.sh
-```
-
-**方式二：后台运行**
-
-```bash
-# 使用 Makefile
-make run-detach
-
-# 使用 Shell 脚本
-./docker/scripts/run/docker-run-detach.sh
-
-# 使用 Docker Compose
-cd docker
-docker-compose up -d
-```
-
-### 5. 进入容器
-
-如果容器在后台运行，可以使用以下命令进入：
-
-```bash
-# 使用 Makefile
-make exec
-
-# 使用 Shell 脚本
-./docker/scripts/run/docker-exec.sh
-
-# 使用 Docker Compose
-cd docker
-docker-compose exec ros-dev bash
-```
-
-## 📖 详细使用说明
-
-### Makefile 命令
-
-查看所有可用命令：
-
-```bash
-make help
-```
-
-**基础命令：**
-
-| 命令 | 说明 |
-|------|------|
-| `make help` | 显示帮助信息和所有可用命令 |
-| `make init` | 初始化环境配置（自动检测系统信息） |
-| `make build` | 构建 Docker 镜像 |
-| `make rebuild` | 清理并重新构建镜像 |
-
-**容器管理命令：**
-
-| 命令 | 说明 |
-|------|------|
-| `make run` | 运行容器（交互式） |
-| `make run-detach` | 后台运行容器 |
-| `make exec` | 进入运行中的容器 |
-| `make stop` | 停止并删除容器 |
-| `make status` | 查看容器状态 |
-| `make logs` | 查看容器日志 |
-| `make clean` | 清理容器和镜像 |
-
-**多架构构建命令：**
-
-| 命令 | 说明 |
-|------|------|
-| `make build-all` | 构建所有架构镜像 |
-| `make build-multiarch` | 构建多架构镜像 |
-| `make build-amd64` | 构建 AMD64 架构镜像 |
-| `make build-arm64` | 构建 ARM64 架构镜像 |
-| `make setup-buildx` | 设置 Buildx 构建器 |
-| `make list-platforms` | 列出支持的平台 |
-
-### Shell 脚本使用
-
-所有脚本都位于 `docker/scripts/` 目录下的子目录中，已添加可执行权限：
-
-**构建相关脚本：**
-
-```bash
-# 构建镜像
-./docker/scripts/build/docker-build.sh
-
-# 清理并重新构建镜像
-./docker/scripts/build/docker-rebuild.sh
-```
-
-**运行相关脚本：**
-
-```bash
-# 运行容器（交互式）
-./docker/scripts/run/docker-run.sh
-
-# 后台运行容器
-./docker/scripts/run/docker-run-detach.sh
-
-# 进入容器
-./docker/scripts/run/docker-exec.sh
-
-# 停止容器
-./docker/scripts/run/docker-stop.sh
-
-# 清理容器和镜像
-./docker/scripts/run/docker-clean.sh
-
-# 查看容器日志
-./docker/scripts/run/docker-logs.sh
-
-# 查看容器状态
-./docker/scripts/run/docker-status.sh
-```
-
-**公共函数库：**
-
-所有脚本都使用 `docker/scripts/utils/common.sh` 中的公共函数，包括：
-- `load_env_vars()` - 加载环境变量
-- `print_info()`, `print_success()`, `print_warning()`, `print_error()` - 格式化输出
-- `check_docker_container()`, `check_docker_container_exists()` - 容器状态检查
-- `get_docker_dir()`, `get_project_root()` - 路径解析函数
-
-### Docker Compose 使用
-
-```bash
-# 进入 docker 目录
-cd docker
-
-# 构建并启动
-docker-compose up -d
-
-# 进入容器
-docker-compose exec ros-dev bash
-
-# 查看日志
-docker-compose logs -f
-
-# 停止
-docker-compose down
-
-# 重新构建
-docker-compose build --no-cache
-```
-
-## 🔧 容器内开发
-
-### ROS 环境
-
-容器内已自动配置 ROS 环境，启动后即可使用：
-
-```bash
-# 检查 ROS 环境
-echo $ROS_DISTRO  # 应输出: noetic
-
-# 查看 ROS 版本
-rosversion -d
-
-# 构建工作空间
-cd ~/catkin_ws
-catkin_make
-
-# 或使用 catkin build（推荐）
-catkin build
-```
-
-### 预设别名和快捷命令
-
-容器内已配置丰富的 bash 别名和快捷命令：
-
-**工作空间导航：**
-```bash
-cw    # cd ~/catkin_ws
-cs    # cd ~/catkin_ws/src
-```
-
-**构建命令：**
-```bash
-cm       # catkin_make
-cb       # catkin build
-remake   # 清理并重新构建
-soc      # 重新加载环境
-```
-
-**ROS 命令别名：**
-```bash
-rt       # rostopic
-rn       # rosnode
-rp       # rosparam
-rs       # rosservice
-rl       # roslaunch
-rr       # rosrun
-```
-
-**实用函数：**
-```bash
-create_ros_pkg <name> [deps]  # 快速创建 ROS 包
-find_pkg <name>               # 查找包路径
-topic_echo <topic>            # 快速监听话题
-```
-
-### 安装额外依赖
-
-**安装 ROS 包：**
-```bash
-sudo apt-get update
-sudo apt-get install ros-noetic-<package-name>
-```
-
-**使用 rosdep 安装依赖：**
-```bash
-cd ~/catkin_ws
-rosdep install --from-paths src --ignore-src -r -y
-```
-
-**安装 Python 包：**
-```bash
-# 在容器内
-pip3 install --user <package-name>
-
-# 或在构建镜像前编辑 docker/requirements.txt
-```
-
-## 🖥️ GUI 应用支持
-
-### RViz 示例
-
-```bash
-# 在容器内运行
-roscore &
-rviz
-```
-
-### rqt 工具
-
-```bash
-# 在容器内运行
-rqt
-```
-
-如果遇到 GUI 显示问题，在主机上执行：
-
-```bash
-xhost +local:docker
-```
-
-## 📝 常见问题
-
-### 1. 权限问题
-
-**问题**: 容器内创建的文件在主机上无法访问
-
-**解决**: 确保 `.env` 文件中的 `USER_UID` 和 `USER_GID` 与主机用户一致。可以通过以下命令查看：
-
-```bash
-id -u  # 查看 UID
-id -g  # 查看 GID
-```
-
-### 2. GUI 无法显示
-
-**问题**: RViz 或 rqt 无法启动
-
-**解决**: 在主机上允许 Docker 访问 X11：
-
-```bash
-xhost +local:docker
-```
-
-如果使用 SSH 连接，需要启用 X11 转发：
-
-```bash
-ssh -X user@host
-```
-
-### 3. 网络连接问题
-
-**问题**: ROS 节点之间无法通信
-
-**解决**: 确保容器使用 `--network host` 模式（配置文件中已设置）
-
-### 4. 容器名称冲突
-
-**问题**: 提示容器名称已存在
-
-**解决**: 先停止并删除旧容器：
-
-```bash
-make stop
-# 或
-docker stop kudan_ws_container && docker rm kudan_ws_container
-```
-
-## 🔄 工作流程示例
-
-### 典型开发流程
-
-```bash
-# 1. 构建镜像（首次或 Dockerfile 修改后）
-make build
-
-# 2. 后台启动容器
-make run-detach
-
-# 3. 进入容器
-make exec
-
-# 4. 在容器内开发
-cd ~/catkin_ws/src
-# ... 编写代码 ...
-cd ~/catkin_ws
-catkin_make
-source devel/setup.bash
-rosrun <package> <node>
-
-# 5. 退出容器（容器继续运行）
-exit
-
-# 6. 需要时再次进入
-make exec
-
-# 7. 完成工作后停止容器
-make stop
-```
-
-### 多终端工作
-
-```bash
-# 终端1: 启动 roscore
-make run-detach
-make exec
-roscore
-
-# 终端2: 运行节点
-make exec
-rosrun <package> <node>
-
-# 终端3: 查看话题
-make exec
-rostopic list
-```
-
-## 📦 自定义配置
-
-### 修改 ROS 版本
-
-编辑 `.env` 文件：
-
-```bash
-ROS_DISTRO=melodic  # 或 foxy, humble 等
-```
-
-然后重新构建：
-
-```bash
-make rebuild
-```
-
-### 添加额外的软件包
-
-编辑 `Dockerfile`，在 `RUN apt-get install` 部分添加所需包：
+示例：构建Python开发环境
 
 ```dockerfile
+FROM ubuntu:20.04
+
+# 安装Python
 RUN apt-get update && apt-get install -y \
-    # ... 现有包 ...
-    ros-${ROS_DISTRO}-your-package \
+    python3 \
+    python3-pip \
+    && apt-get clean
+
+# 安装Python包
+RUN pip3 install --user pip setuptools wheel
+RUN pip3 install numpy pandas matplotlib
+```
+
+### 4. 构建镜像
+
+```bash
+make build
+```
+
+### 5. 运行容器
+
+交互式运行：
+```bash
+make run
+```
+
+后台运行：
+```bash
+make run-d
+```
+
+## 常用命令
+
+### 基础命令
+
+```bash
+make help          # 显示帮助信息
+make build         # 构建Docker镜像
+make run           # 启动容器（交互式）
+make run-d         # 启动容器（后台模式）
+make stop          # 停止容器
+make rm            # 删除容器
+make rmi           # 删除镜像
+make clean         # 清理容器和镜像
+make rebuild       # 重新构建镜像
+```
+
+### 容器管理
+
+```bash
+make exec CMD='bash'    # 在容器中执行命令
+make logs               # 查看容器日志
+make ps                 # 查看容器状态
+make images             # 查看镜像列表
+make bash               # 进入容器bash
+make config             # 查看当前配置
+```
+
+## 模板示例
+
+项目提供了多种开发环境的Dockerfile模板，位于 `docker/templates/` 目录。每个模板都经过优化，可以直接使用。
+
+### 可用模板
+
+| 模板 | 基础镜像 | 主要工具 | 适用场景 |
+|------|---------|---------|---------|
+| **通用模板** | ubuntu:20.04 | 基础开发工具 | 通用开发环境 |
+| **Python** | python:3.11-slim | Python 3.11, pip, jupyter, pytest | Python开发、数据科学、机器学习 |
+| **Node.js** | node:18-slim | Node.js 18, npm, yarn, pnpm | Web前端、Node.js后端开发 |
+| **Java** | openjdk:11-slim | OpenJDK 11, Maven, Gradle | Java应用开发、Spring Boot |
+| **ROS** | ubuntu:20.04 | ROS Noetic, rosdep | 机器人开发、ROS应用 |
+
+### 快速使用模板
+
+#### 方法1：直接复制模板
+
+```bash
+# 1. 选择并复制模板Dockerfile
+cp docker/templates/python/Dockerfile docker/Dockerfile
+
+# 2. （可选）修改Dockerfile以满足特定需求
+vim docker/Dockerfile
+
+# 3. 构建镜像
+make build
+
+# 4. 运行容器
+make run
+```
+
+#### 方法2：基于模板自定义
+
+```bash
+# 1. 查看模板内容
+cat docker/templates/python/Dockerfile
+
+# 2. 复制到主Dockerfile并修改
+cp docker/templates/python/Dockerfile docker/Dockerfile
+
+# 3. 根据项目需求修改Dockerfile
+# - 修改基础镜像版本
+# - 添加/删除依赖包
+# - 配置环境变量
+
+# 4. 构建并运行
+make build && make run
+```
+
+### 模板详细说明
+
+#### Python开发环境模板
+
+**特点：**
+- 基于官方Python 3.11镜像
+- 预装常用Python工具（ipython, jupyter, pytest, black等）
+- 包含基础开发工具（git, vim, tmux等）
+- 已配置Python环境变量和别名
+
+**适用场景：**
+- Python Web开发（Django, Flask）
+- 数据科学和机器学习
+- 自动化脚本开发
+- Python包开发
+
+**使用示例：**
+```bash
+cp docker/templates/python/Dockerfile docker/Dockerfile
+make build
+make run
+```
+
+#### Node.js开发环境模板
+
+**特点：**
+- 基于官方Node.js 18镜像
+- 预装常用Node.js工具（yarn, pnpm, typescript, eslint等）
+- 包含基础开发工具
+- 支持TypeScript开发
+
+**适用场景：**
+- 前端开发（React, Vue, Angular）
+- Node.js后端开发
+- 全栈JavaScript开发
+- 微服务开发
+
+**使用示例：**
+```bash
+cp docker/templates/nodejs/Dockerfile docker/Dockerfile
+make build
+make run
+```
+
+#### Java开发环境模板
+
+**特点：**
+- 基于OpenJDK 11镜像
+- 预装Maven和Gradle构建工具
+- 包含基础开发工具
+- 已配置Java环境变量
+
+**适用场景：**
+- Java应用开发
+- Spring Boot项目
+- 企业级应用开发
+- 微服务开发
+
+**使用示例：**
+```bash
+cp docker/templates/java/Dockerfile docker/Dockerfile
+make build
+make run
+```
+
+#### ROS开发环境模板
+
+**特点：**
+- 基于Ubuntu 20.04
+- 完整安装ROS Noetic Desktop Full
+- 预装rosdep和常用ROS工具
+- 已配置ROS环境变量
+- 包含基础开发工具
+
+**适用场景：**
+- 机器人软件开发
+- ROS应用开发
+- 机器人仿真
+- SLAM和导航开发
+
+**使用示例：**
+```bash
+cp docker/templates/ros/Dockerfile docker/Dockerfile
+make build
+make run
+```
+
+**注意：** ROS模板构建时间较长（约15-30分钟），请耐心等待。
+
+### 模板自定义指南
+
+所有模板都遵循相同的结构，便于自定义：
+
+```dockerfile
+# 1. 基础镜像（根据需要修改）
+FROM <base-image>
+
+# 2. 构建参数（可通过docker build --build-arg传递）
+ARG USER_NAME=developer
+ARG USER_UID=1000
+ARG USER_GID=1000
+ARG WORKSPACE_DIR=/home/${USER_NAME}/workspace
+
+# 3. 环境变量
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Shanghai
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# 4. 安装依赖和工具
+RUN apt-get update && apt-get install -y \
+    <your-packages> \
+    && apt-get clean
+
+# 5. 创建用户和配置
+RUN groupadd -g ${USER_GID} ${USER_NAME} || true
+RUN useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash ${USER_NAME} || true
+
+# 6. 切换到用户
+USER ${USER_NAME}
+WORKDIR ${WORKSPACE_DIR}
+
+# 7. 安装用户级工具和配置
+RUN <user-level-installations>
+
+# 8. 自定义配置（.bashrc等）
+RUN echo 'alias your-alias="command"' >> ~/.bashrc
+
+# 9. 默认命令
+CMD ["tail", "-f", "/dev/null"]
+```
+
+### 使用模板
+
+1. 查看模板目录：
+```bash
+ls docker/templates/
+```
+
+2. 复制模板Dockerfile：
+```bash
+cp docker/templates/python/Dockerfile docker/Dockerfile
+```
+
+3. 根据需要修改Dockerfile
+
+4. 构建镜像：
+```bash
+make build
+```
+
+## 自定义配置
+
+### 修改基础镜像
+
+编辑 `docker/Dockerfile`，修改FROM语句：
+
+```dockerfile
+# 使用Ubuntu
+FROM ubuntu:20.04
+FROM ubuntu:22.04
+
+# 使用Debian
+FROM debian:11
+FROM debian:12
+
+# 使用Alpine Linux（更小体积）
+FROM alpine:3.18
+FROM alpine:3.19
+
+# 使用官方语言镜像
+FROM python:3.11-slim
+FROM python:3.12-slim
+FROM node:18-slim
+FROM node:20-slim
+FROM openjdk:11-slim
+FROM openjdk:17-slim
+```
+
+**建议：**
+- 开发环境推荐使用`-slim`版本，体积更小
+- 生产环境可以考虑使用`alpine`版本进一步减小体积
+- 选择稳定版本（LTS）而非最新版本
+
+### 安装依赖
+
+#### Ubuntu/Debian系统
+
+```dockerfile
+# 更新软件源并安装包
+RUN apt-get update && apt-get install -y \
+    package1 \
+    package2 \
+    package3 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# 安装特定版本
+RUN apt-get update && apt-get install -y \
+    package1=1.0.0 \
+    package2=2.0.0 \
+    && apt-get clean
 ```
 
-### 挂载额外目录
+#### Alpine系统
 
-编辑 `Makefile` 或 `docker-compose.yml`，添加 volume 挂载：
-
-```yaml
-volumes:
-  - ${WORKSPACE_DIR}:/home/${USER_NAME}/catkin_ws
-  - /path/on/host:/path/in/container  # 添加新的挂载
+```dockerfile
+# 安装包
+RUN apk add --no-cache \
+    package1 \
+    package2 \
+    package3
 ```
 
-## 🛡️ 注意事项
+#### Python包管理
 
-1. **数据持久化**: 容器内 `~/catkin_ws` 目录已挂载到主机，数据会自动保存
-2. **容器删除**: 使用 `--rm` 标志的容器退出后会自动删除，但挂载的数据不会丢失
-3. **特权模式**: 容器使用 `--privileged` 模式以支持某些硬件访问，注意安全性
-4. **网络模式**: 使用 host 网络模式，容器与主机共享网络栈
+```dockerfile
+# 升级pip和基础工具
+RUN pip install --upgrade pip setuptools wheel
 
-## 📚 参考资源
+# 安装Python包
+RUN pip install \
+    numpy \
+    pandas \
+    matplotlib \
+    requests
 
-- [ROS Noetic 官方文档](http://wiki.ros.org/noetic)
-- [Docker 官方文档](https://docs.docker.com/)
-- [ROS Docker 最佳实践](http://wiki.ros.org/docker/Tutorials)
+# 从requirements.txt安装
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-## 📄 许可证
+# 安装到用户目录（推荐）
+RUN pip install --user package1 package2
+```
 
-本项目配置文件遵循 MIT 许可证。
+#### Node.js包管理
 
-## 🤝 贡献
+```dockerfile
+# 全局安装npm包
+RUN npm install -g \
+    package1 \
+    package2
 
-欢迎提交 Issue 和 Pull Request！
+# 使用yarn
+RUN npm install -g yarn
+RUN yarn global add package1 package2
 
----
+# 使用pnpm
+RUN npm install -g pnpm
+RUN pnpm add -g package1 package2
 
-**Happy Coding! 🚀**
+# 从package.json安装
+COPY package.json package-lock.json ./
+RUN npm install
+```
+
+#### Java依赖管理
+
+```dockerfile
+# 使用Maven
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# 使用Gradle
+COPY build.gradle .
+RUN gradle dependencies
+```
+
+### 配置环境变量
+
+#### 在Dockerfile中设置
+
+```dockerfile
+# 单个环境变量
+ENV MY_VAR=value
+
+# 多个环境变量
+ENV VAR1=value1 \
+    VAR2=value2 \
+    VAR3=value3
+
+# PATH配置
+ENV PATH=/custom/path:$PATH
+
+# Python环境
+ENV PYTHONPATH=/app:$PYTHONPATH
+ENV PYTHONUNBUFFERED=1
+
+# Node.js环境
+ENV NODE_ENV=production
+ENV npm_config_prefix=/home/user/.npm-global
+
+# Java环境
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV MAVEN_OPTS="-Xmx1024m"
+```
+
+#### 在.env文件中设置
+
+编辑 `docker/config/.env` 文件：
+
+```bash
+# 自定义环境变量
+ENV_VAR1=value1
+ENV_VAR2=value2
+
+# 应用配置
+APP_ENV=development
+APP_PORT=8080
+APP_DEBUG=true
+
+# 数据库配置
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=myapp
+```
+
+### 端口映射
+
+#### 方法1：在.env文件中配置
+
+编辑 `docker/config/.env` 文件：
+
+```bash
+# 端口映射（主机端口:容器端口）
+PORTS=8080:8080 3000:3000 5000:5000
+```
+
+#### 方法2：在运行脚本中添加
+
+编辑 `docker/scripts/run/docker-run.sh`：
+
+```bash
+docker run -it --rm \
+    --name ${CONTAINER_NAME} \
+    -p 8080:8080 \
+    -p 3000:3000 \
+    -v ${WORKSPACE_DIR}:/home/${USER_NAME}/workspace \
+    ${IMAGE_NAME}:${IMAGE_TAG}
+```
+
+### 卷挂载
+
+#### 挂载工作目录
+
+```bash
+# 在.env中配置
+WORKSPACE_DIR=/path/to/your/workspace
+
+# 在运行脚本中使用
+-v ${WORKSPACE_DIR}:/home/${USER_NAME}/workspace
+```
+
+#### 挂载其他目录
+
+```bash
+# 挂载数据目录
+-v /path/to/data:/data
+
+# 挂载配置文件
+-v /path/to/config:/config:ro
+
+# 挂载多个目录
+-v /path/to/dir1:/dir1 \
+-v /path/to/dir2:/dir2
+```
+
+### GPU支持
+
+如果需要GPU支持，确保已安装nvidia-docker：
+
+#### 检查nvidia-docker安装
+
+```bash
+docker run --rm --gpus all nvidia/cuda:11.0.3-base-ubuntu20.04 nvidia-smi
+```
+
+#### 在运行脚本中启用GPU
+
+编辑 `docker/scripts/run/docker-run.sh`：
+
+```bash
+docker run -it --rm \
+    --name ${CONTAINER_NAME} \
+    --gpus all \
+    -v ${WORKSPACE_DIR}:/home/${USER_NAME}/workspace \
+    ${IMAGE_NAME}:${IMAGE_TAG}
+```
+
+#### 指定GPU数量
+
+```bash
+# 使用所有GPU
+--gpus all
+
+# 使用特定GPU
+--gpus device=0,1
+
+# 使用特定数量的GPU
+--gpus 2
+```
+
+### 网络配置
+
+#### 使用主机网络
+
+```bash
+docker run -it --rm \
+    --name ${CONTAINER_NAME} \
+    --network host \
+    -v ${WORKSPACE_DIR}:/home/${USER_NAME}/workspace \
+    ${IMAGE_NAME}:${IMAGE_TAG}
+```
+
+#### 自定义网络
+
+```bash
+# 创建自定义网络
+docker network create my-network
+
+# 使用自定义网络
+docker run -it --rm \
+    --name ${CONTAINER_NAME} \
+    --network my-network \
+    -v ${WORKSPACE_DIR}:/home/${USER_NAME}/workspace \
+    ${IMAGE_NAME}:${IMAGE_TAG}
+```
+
+### 资源限制
+
+#### 限制内存使用
+
+```bash
+docker run -it --rm \
+    --name ${CONTAINER_NAME} \
+    --memory="4g" \
+    --memory-swap="4g" \
+    -v ${WORKSPACE_DIR}:/home/${USER_NAME}/workspace \
+    ${IMAGE_NAME}:${IMAGE_TAG}
+```
+
+#### 限制CPU使用
+
+```bash
+docker run -it --rm \
+    --name ${CONTAINER_NAME} \
+    --cpus="2.0" \
+    -v ${WORKSPACE_DIR}:/home/${USER_NAME}/workspace \
+    ${IMAGE_NAME}:${IMAGE_TAG}
+```
+
+#### 综合资源限制
+
+```bash
+docker run -it --rm \
+    --name ${CONTAINER_NAME} \
+    --memory="4g" \
+    --cpus="2.0" \
+    --pids-limit 1024 \
+    -v ${WORKSPACE_DIR}:/home/${USER_NAME}/workspace \
+    ${IMAGE_NAME}:${IMAGE_TAG}
+```
+
+## 多架构构建
+
+本模板支持为多种CPU架构构建Docker镜像，包括：
+- **linux/amd64**: Intel/AMD 64位架构 (x86_64)
+- **linux/arm64**: ARM 64位架构 (aarch64)
+- **linux/arm/v7**: ARM 32位架构
+- **linux/riscv64**: RISC-V 64位架构
+
+### 快速开始
+
+#### 1. 设置Buildx构建器
+
+```bash
+make setup-buildx
+```
+
+此命令会：
+- 创建或使用名为`multiarch-builder`的Buildx构建器
+- 安装QEMU模拟器以支持交叉编译
+- 显示构建器信息
+
+#### 2. 列出支持的平台
+
+```bash
+make list-platforms
+```
+
+#### 3. 构建多架构镜像
+
+**构建所有配置的平台：**
+
+```bash
+make build-multiarch
+```
+
+**构建特定架构：**
+
+```bash
+# 仅构建AMD64
+make build-amd64
+
+# 仅构建ARM64
+make build-arm64
+
+# 构建所有支持的架构
+make build-all
+```
+
+### 配置多架构构建
+
+编辑 `docker/config/.env.multiarch` 文件：
+
+```bash
+# 选择目标平台
+TARGET_PLATFORMS="linux/amd64 linux/arm64"
+
+# 构建输出类型
+BUILD_OUTPUT_TYPE=local  # local, registry, tar
+
+# 镜像仓库配置（当BUILD_OUTPUT_TYPE=registry时）
+REGISTRY=docker.io
+REPO_NAME=yourusername/my-dev-image
+
+# 输出路径（当BUILD_OUTPUT_TYPE=tar时）
+OUTPUT_PATH=./output/images
+```
+
+### 构建输出类型
+
+#### 本地存储（默认）
+
+```bash
+make build-multiarch
+```
+
+镜像将保存到本地Docker镜像存储中。
+
+#### 推送到镜像仓库
+
+编辑 `.env.multiarch`：
+
+```bash
+BUILD_OUTPUT_TYPE=registry
+REGISTRY=docker.io
+REPO_NAME=yourusername/my-dev-image
+```
+
+然后运行：
+
+```bash
+make build-multiarch
+# 或直接推送
+make push-multiarch
+```
+
+#### 导出为tar文件
+
+编辑 `.env.multiarch`：
+
+```bash
+BUILD_OUTPUT_TYPE=tar
+OUTPUT_PATH=./output/images
+```
+
+然后运行：
+
+```bash
+make build-multiarch
+```
+
+### 导入/导出镜像
+
+```bash
+# 导出镜像为tar
+make export-tar
+
+# 从tar文件导入镜像
+make import-tar TAR_FILE=./output/images/my-dev-image-latest.tar
+```
+
+### 查看多架构镜像信息
+
+```bash
+make inspect-multiarch
+```
+
+### 常见问题
+
+#### Q: 如何在ARM设备上运行x86镜像？
+
+A: 需要启用QEMU模拟器，`make setup-buildx`命令会自动处理。
+
+#### Q: 多架构构建需要多长时间？
+
+A: 取决于镜像复杂度和网络速度，通常比单平台构建慢2-4倍。
+
+#### Q: 如何验证镜像是否支持多架构？
+
+A: 使用 `make inspect-multiarch` 查看镜像的平台信息。
+
+### 详细文档
+
+更多详细信息请参考：[docker/MULTIARCH.md](docker/MULTIARCH.md)
+
+## 工作目录说明
+
+容器启动后，主机的工作空间目录会被挂载到容器的 `/home/{USER_NAME}/workspace` 目录。
+
+- 主机目录：`WORKSPACE_DIR`（在.env中配置）
+- 容器目录：`/home/{USER_NAME}/workspace`
+
+这样可以在容器内外共享文件，修改会实时同步。
+
+## 常见问题
+
+### 权限问题
+
+如果遇到文件权限问题，确保 `.env` 文件中的 `USER_UID` 和 `USER_GID` 与主机用户一致：
+
+```bash
+id  # 查看当前用户的UID和GID
+```
+
+### 容器无法启动
+
+检查Dockerfile语法是否正确：
+
+```bash
+docker build -f docker/Dockerfile -t test .
+```
+
+### 镜像构建失败
+
+查看详细错误信息：
+
+```bash
+docker build --no-cache -f docker/Dockerfile -t test .
+```
+
+### X11转发不工作
+
+确保主机启用了X11转发：
+
+```bash
+xhost +local:docker
+```
+
+## 项目结构
+
+```
+docker-template/
+├── Makefile                 # 主Makefile
+├── README.md               # 项目文档
+└── docker/
+    ├── Dockerfile          # Docker镜像定义（主要修改文件）
+    ├── config/
+    │   └── .env           # 环境变量配置（主要修改文件）
+    ├── scripts/
+    │   ├── build/
+    │   │   └── docker-build.sh      # 构建脚本
+    │   ├── run/
+    │   │   ├── docker-run.sh       # 运行脚本（交互式）
+    │   │   └── docker-run-detach.sh # 运行脚本（后台模式）
+    │   └── utils/
+    │       └── common.sh          # 公共函数
+    └── templates/          # 各种语言的Dockerfile示例
+        ├── python/
+        ├── nodejs/
+        ├── java/
+        └── ros/
+```
+
+## 贡献
+
+欢迎提交问题和改进建议！
+
+## 许可证
+
+MIT License
+
+## 联系方式
+
+如有问题，请提交Issue或联系维护者。
