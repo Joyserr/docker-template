@@ -10,23 +10,26 @@ help:
 	@echo "========================================="
 	@echo ""
 	@echo "快速开始:"
-	@echo "  1. 编辑 docker/Dockerfile 配置基础镜像和依赖"
-	@echo "  2. 编辑 docker/config/.env 配置环境变量"
-	@echo "  3. 运行 'make build' 构建镜像"
-	@echo "  4. 运行 'make run' 启动容器"
+	@echo "  1. 运行 'make init' 初始化配置（可选但推荐）"
+	@echo "  2. 编辑 docker/Dockerfile 配置基础镜像和依赖"
+	@echo "  3. 编辑 docker/config/.env 配置环境变量"
+	@echo "  4. 运行 'make build' 构建镜像"
+	@echo "  5. 运行 'make run' 启动容器"
 	@echo ""
 	@echo "基础命令:"
-	@echo "  make build          - 构建Docker镜像"
-	@echo "  make run            - 启动容器（交互式）"
-	@echo "  make run-d          - 启动容器（后台模式）"
-	@echo "  make stop           - 停止容器"
-	@echo "  make rm             - 删除容器"
-	@echo "  make rmi            - 删除镜像"
-	@echo "  make clean          - 清理容器和镜像"
-	@echo "  make exec CMD='cmd' - 在运行中的容器中执行命令"
-	@echo "  make logs           - 查看容器日志"
-	@echo "  make ps             - 查看容器状态"
-	@echo "  make images         - 查看镜像列表"
+	@echo "  make init             - 初始化配置文件（自动设置用户信息和工作空间）"
+	@echo "  make build            - 构建Docker镜像"
+	@echo "  make run              - 启动容器（交互式）"
+	@echo "  make run-d            - 启动容器（后台模式）"
+	@echo "  make stop             - 停止容器"
+	@echo "  make rm               - 删除容器"
+	@echo "  make rmi              - 删除镜像"
+	@echo "  make clean            - 清理容器和镜像"
+	@echo "  make exec CMD='cmd'   - 在运行中的容器中执行命令"
+	@echo "  make logs             - 查看容器日志"
+	@echo "  make ps               - 查看容器状态"
+	@echo "  make images           - 查看镜像列表"
+	@echo "  make enter            - 进入已运行的容器（带状态检查）"
 	@echo ""
 	@echo "多架构构建命令:"
 	@echo "  make setup-buildx       - 设置Buildx构建器"
@@ -50,6 +53,50 @@ help:
 # 加载环境变量
 -include docker/config/.env
 
+# 初始化配置
+.PHONY: init
+init:
+	@echo "$(GREEN)=========================================$(NC)"
+	@echo "$(GREEN)初始化Docker开发环境$(NC)"
+	@echo "$(GREEN)=========================================$(NC)"
+	@if [ ! -f docker/config/.env ]; then \
+	    echo "创建配置文件 docker/config/.env"; \
+	    cp docker/config/.env.examples docker/config/.env 2>/dev/null || { \
+	        echo "# ========================================" > docker/config/.env; \
+	        echo "# Docker镜像配置文件" >> docker/config/.env; \
+	        echo "# ========================================" >> docker/config/.env; \
+	        echo "# 修改此文件来配置你的Docker镜像" >> docker/config/.env; \
+	        echo "" >> docker/config/.env; \
+	        echo "# 用户配置（与主机用户保持一致，避免权限问题）" >> docker/config/.env; \
+	        echo "USER_NAME=$(shell whoami)" >> docker/config/.env; \
+	        echo "USER_UID=$(shell id -u)" >> docker/config/.env; \
+	        echo "USER_GID=$(shell id -g)" >> docker/config/.env; \
+	        echo "" >> docker/config/.env; \
+	        echo "# Docker镜像配置" >> docker/config/.env; \
+	        echo "IMAGE_NAME=my-ros-dev-image" >> docker/config/.env; \
+	        echo "IMAGE_TAG=latest" >> docker/config/.env; \
+	        echo "CONTAINER_NAME=my_ros_dev_container" >> docker/config/.env; \
+	        echo "" >> docker/config/.env; \
+	        echo "# 工作空间目录（挂载到容器中的目录）" >> docker/config/.env; \
+	        echo "WORKSPACE_DIR=$(shell pwd)" >> docker/config/.env; \
+	    }; \
+	else \
+	    echo "配置文件 docker/config/.env 已存在"; \
+	    echo "正在更新用户信息..."; \
+	    sed -i.bak 's/^USER_NAME=.*/USER_NAME=$(shell whoami)/' docker/config/.env && rm -f docker/config/.env.bak; \
+	    sed -i.bak 's/^USER_UID=.*/USER_UID=$(shell id -u)/' docker/config/.env && rm -f docker/config/.env.bak; \
+	    sed -i.bak 's/^USER_GID=.*/USER_GID=$(shell id -g)/' docker/config/.env && rm -f docker/config/.env.bak; \
+	    if ! grep -q "WORKSPACE_DIR" docker/config/.env; then \
+	        echo "" >> docker/config/.env; \
+	        echo "# 工作空间目录（挂载到容器中的目录）" >> docker/config/.env; \
+	        echo "WORKSPACE_DIR=$(shell pwd)" >> docker/config/.env; \
+	    else \
+	        sed -i.bak 's|^WORKSPACE_DIR=.*|WORKSPACE_DIR=$(shell pwd)|' docker/config/.env && rm -f docker/config/.env.bak; \
+	    fi; \
+	fi
+	@echo "$(GREEN)配置初始化完成！$(NC)"
+	@echo "$(GREEN)请检查 docker/config/.env 文件并根据需要进行调整$(NC)"
+
 # 设置默认值
 USER_NAME ?= $(shell whoami)
 USER_UID ?= $(shell id -u)
@@ -58,6 +105,8 @@ IMAGE_NAME ?= my-dev-image
 IMAGE_TAG ?= latest
 CONTAINER_NAME ?= my_dev_container
 WORKSPACE_DIR ?= $(shell pwd)
+ROS_MASTER_URI ?= http://localhost:11311
+ENABLE_GUI ?= true
 
 # 颜色定义
 GREEN := \033[0;32m
@@ -149,6 +198,18 @@ rebuild: clean build
 bash:
 	@docker exec -it $(CONTAINER_NAME) bash
 
+# 进入已运行的容器（带状态检查）
+.PHONY: enter
+enter:
+	@if [ "$(shell docker ps -q -f name=$(CONTAINER_NAME) -f status=running)" = "" ]; then \
+		echo "错误: 容器 $(CONTAINER_NAME) 未运行"; \
+		echo "请先运行 'make run' 启动容器"; \
+		exit 1; \
+	else \
+		echo "正在进入容器 $(CONTAINER_NAME)..."; \
+		docker exec -it $(CONTAINER_NAME) bash; \
+	fi
+
 # 查看配置
 .PHONY: config
 config:
@@ -161,6 +222,8 @@ config:
 	@echo "镜像名称: $(IMAGE_NAME):$(IMAGE_TAG)"
 	@echo "容器名称: $(CONTAINER_NAME)"
 	@echo "工作空间: $(WORKSPACE_DIR)"
+	@echo "ROS主节点: $(ROS_MASTER_URI)"
+	@echo "GUI支持: $(ENABLE_GUI)"
 	@echo "========================================="
 
 # ========================================

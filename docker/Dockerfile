@@ -68,7 +68,7 @@ USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
 # 安装 Python 依赖（在创建工作空间之前）
-COPY --chown=${USER_NAME}:${USER_NAME} requirements.txt /tmp/requirements.txt
+COPY --chown=${USER_NAME}:${USER_NAME} docker/requirements.txt /tmp/requirements.txt
 RUN pip3 install --user --no-cache-dir -r /tmp/requirements.txt || true && \
     rm /tmp/requirements.txt
 
@@ -77,7 +77,7 @@ RUN mkdir -p ~/catkin_ws/src
 WORKDIR /home/${USER_NAME}/catkin_ws
 
 # 复制自定义 bashrc 配置
-COPY --chown=${USER_NAME}:${USER_NAME} config/bashrc /home/${USER_NAME}/.bashrc_docker
+COPY --chown=${USER_NAME}:${USER_NAME} docker/config/bashrc /home/${USER_NAME}/.bashrc_docker
 
 # 配置ROS环境（加载 Docker 专用配置）
 RUN echo "# Load Docker-specific ROS configuration" >> ~/.bashrc && \

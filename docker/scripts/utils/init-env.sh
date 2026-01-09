@@ -49,9 +49,9 @@ USER_UID=$DETECTED_UID
 USER_GID=$DETECTED_GID
 
 # Docker image configuration
-IMAGE_NAME=ros-kudan-dev
+IMAGE_NAME=docker-template
 IMAGE_TAG=latest
-CONTAINER_NAME=kudan_ws_container
+CONTAINER_NAME=docker-template-container
 
 # ROS distribution configuration
 ROS_DISTRO=noetic
