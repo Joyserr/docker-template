@@ -1,0 +1,103 @@
+# Python 3.11 Docker开发环境模板
+ARG PYTHON_VERSION=3.11
+FROM python:${PYTHON_VERSION}-slim
+
+# 避免交互式提示
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 设置时区为中国时区
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
+
+# 配置国内镜像源（Debian）
+RUN sed -i 's|http://deb.debian.org/debian|https://mirrors.ustc.edu.cn/debian|g' /etc/apt/sources.list && \
+    sed -i 's|http://security.debian.org|https://mirrors.ustc.edu.cn/debian-security|g' /etc/apt/sources.list
+
+# 更新apt源并安装基础开发工具
+RUN apt-get update && apt-get install -y \
+    vim \
+    wget \
+    htop \
+    tmux \
+    build-essential \
+    cmake \
+    git \
+    curl \
+    bash-completion \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装额外的Python开发工具
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    libffi-dev \
+    libssl-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 升级pip并安装基础Python包
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir \
+    ipython \
+    jupyter \
+    jupyterlab \
+    pytest \
+    black \
+    flake8 \
+    mypy \
+    pre-commit \
+    virtualenv \
+    pipenv
+
+# 安装数据科学包（可选）
+RUN pip install --no-cache-dir \
+    numpy \
+    scipy \
+    matplotlib \
+    pandas \
+    seaborn \
+    scikit-learn \
+    jupyter \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建用户（与主机用户保持一致，避免权限问题）
+ARG USER_NAME=sysadmin
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+RUN groupadd -g ${USER_GID} ${USER_NAME} || true && \
+    useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash ${USER_NAME} && \
+    echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# 切换到用户
+USER ${USER_NAME}
+WORKDIR /home/${USER_NAME}
+
+# 安装用户级Python包
+RUN pip install --user --no-cache-dir \
+    ipython \
+    jupyter \
+    pytest \
+    black \
+    flake8
+
+# 设置工作空间
+RUN mkdir -p ~/workspace
+WORKDIR /home/${USER_NAME}/workspace
+
+# 复制自定义 bashrc 配置
+COPY --chown=${USER_NAME}:${USER_NAME} docker/templates/python/bashrc /home/${USER_NAME}/.bashrc_docker
+
+# 配置Python环境（加载 Docker 专用配置）
+RUN echo "# Load Docker-specific Python configuration" >> ~/.bashrc && \
+    echo "if [ -f ~/.bashrc_docker ]; then" >> ~/.bashrc && \
+    echo "    source ~/.bashrc_docker" >> ~/.bashrc && \
+    echo "fi" >> ~/.bashrc
+
+# 默认启动bash
+CMD ["/bin/bash"]

@@ -1,0 +1,187 @@
+# Python Docker Container Configuration
+# This file is auto-loaded when entering to container
+
+# ============================================
+# Basic Shell Configuration
+# ============================================
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# History configuration
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+
+# Check window size after each command
+shopt -s checkwinsize
+
+# Better tab completion
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+fi
+
+# ============================================
+# Color Support
+# ============================================
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# Colored GCC warnings and errors
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# ============================================
+# Python Environment Setup
+# ============================================
+echo "Loading Python development environment..."
+
+# Add local bin to PATH for pip installed packages
+export PATH="$HOME/.local/bin:$PATH"
+
+# Python environment variables
+export PYTHONPATH="$HOME/workspace:$PYTHONPATH"
+export PYTHONUNBUFFERED=1
+
+# Jupyter configuration
+export JUPYTER_ENABLE_LAB=yes
+
+# ============================================
+# Useful Aliases
+# ============================================
+# General aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# Python workspace aliases
+alias pw='cd ~/workspace'
+alias psrc='cd ~/workspace/src'
+alias ptest='cd ~/workspace && python -m pytest'
+alias pblack='cd ~/workspace && python -m black .'
+alias pflake='cd ~/workspace && python -m flake8 .'
+alias pmypy='cd ~/workspace && python -m mypy .'
+
+# Python environment aliases
+alias venv='python -m venv'
+alias activate='source venv/bin/activate'
+alias activate2='source venv2/bin/activate'
+alias activate3='source venv3/bin/activate'
+
+# Development aliases
+alias pipu='pip install --upgrade pip'
+alias pipi='pip install'
+alias pipun='pip uninstall'
+alias piplist='pip list'
+alias pipfree='pip freeze'
+
+# Jupyter aliases
+alias jl='jupyter lab --no-browser --port=8888 --ip=0.0.0.0'
+alias jn='jupyter notebook --no-browser --port=8888 --ip=0.0.0.0'
+alias jllocal='jupyter lab'
+alias jnlocal='jupyter notebook'
+
+# IPython aliases
+alias ipy='ipython'
+alias ipylab='ipython --pylab=inline'
+
+# ============================================
+# Useful Functions
+# ============================================
+
+# Quick Python project creation
+create_py_proj() {
+    if [ -z "$1" ]; then
+        echo "Usage: create_py_proj <project_name>"
+        return 1
+    fi
+    mkdir -p ~/workspace/$1
+    cd ~/workspace/$1
+    python -m venv venv
+    source venv/bin/activate
+    echo "# $1" > README.md
+    echo "Created Python project: $1"
+}
+
+# Quick package installation with user flag
+pipuser() {
+    pip install --user "$@"
+}
+
+# Quick requirements installation
+pipreq() {
+    if [ -f requirements.txt ]; then
+        pip install -r requirements.txt
+    else
+        echo "No requirements.txt found"
+    fi
+}
+
+# Quick test runner
+pytestq() {
+    if [ -n "$1" ]; then
+        python -m pytest $@ -v
+    else
+        python -m pytest -v
+    fi
+}
+
+# Quick formatter
+blackq() {
+    if [ -n "$1" ]; then
+        python -m black $@
+    else
+        python -m black .
+    fi
+}
+
+# ============================================
+# Custom Prompt
+# ============================================
+# Show Python version in prompt
+PYTHON_VERSION=$(python --version 2>&1 | cut -d' ' -f2)
+PS1='\[\033[01;32m\](Python:$PYTHON_VERSION)\[\033[00m\] \[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
+
+# ============================================
+# Welcome Message
+# ============================================
+echo ""
+echo "=========================================="
+echo "  Python Docker Development Container"
+echo "=========================================="
+echo "  Python Version: $PYTHON_VERSION"
+echo "  Workspace:     ~/workspace"
+echo "  User:          $(whoami)"
+echo "=========================================="
+echo ""
+echo "Quick Commands:"
+echo "  pw             - Navigate to workspace"
+echo "  ptest, pblack  - Test and format workspace"
+echo "  jl, jn        - Start Jupyter (remote)"
+echo "  jllocal, jnlocal - Start Jupyter (local)"
+echo "  venv           - Create virtual environment"
+echo "  activate       - Activate venv"
+echo ""
+echo "Python Commands:"
+echo "  pipu, pipi    - Upgrade and install packages"
+echo "  pytestq        - Run tests quickly"
+echo "  blackq         - Format code quickly"
+echo ""
+echo "Type 'alias' to see all available shortcuts"
+echo "=========================================="
+echo ""
+
+# ============================================
+# Editor Configuration
+# ============================================
+export EDITOR=vim
+export VISUAL=vim

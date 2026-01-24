@@ -1,0 +1,286 @@
+# Java Docker Container Configuration
+# This file is auto-loaded when entering container
+
+# ============================================
+# Basic Shell Configuration
+# ============================================
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# History configuration
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+
+# Check window size after each command
+shopt -s checkwinsize
+
+# Better tab completion
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+fi
+
+# ============================================
+# Color Support
+# ============================================
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# Colored GCC warnings and errors
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01:32:locus=01:quote=01'
+
+# ============================================
+# Java Environment Setup
+# ============================================
+echo "Loading Java development environment..."
+
+# Java environment variables
+export JAVA_HOME=/usr/local/openjdk-$(java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1-2)
+export PATH=$JAVA_HOME/bin:$PATH
+
+# Maven environment
+if [ -d "/opt/apache-maven-3.9.4" ]; then
+    export MAVEN_HOME=/opt/apache-maven-3.9.4
+    export PATH=$MAVEN_HOME/bin:$PATH
+fi
+
+# Gradle environment
+if [ -d "/opt/gradle-8.4" ]; then
+    export GRADLE_HOME=/opt/gradle-8.4
+    export PATH=$GRADLE_HOME/bin:$PATH
+fi
+
+# Java options
+export JAVA_OPTS="-Xmx2g -Xms1g -XX:+UseG1GC"
+export MAVEN_OPTS="-Xmx2g -Xms1g"
+export GRADLE_OPTS="-Xmx2g -Xms1g -Dorg.gradle.daemon=true"
+
+# ============================================
+# Useful Aliases
+# ============================================
+# General aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# Java workspace aliases
+alias jw='cd ~/workspace'
+alias jsrc='cd ~/workspace/src'
+alias jtest='cd ~/workspace && mvn test'
+alias jbuild='cd ~/workspace && mvn compile'
+alias jpackage='cd ~/workspace && mvn package'
+alias jinstall='cd ~/workspace && mvn install'
+alias jclean='cd ~/workspace && mvn clean'
+
+# Maven aliases
+alias mvnc='mvn clean'
+alias mvncc='mvn clean compile'
+alias mvncp='mvn clean package'
+alias mvnci='mvn clean install'
+alias mvnd='mvn deploy'
+alias mvnt='mvn test'
+alias mvntc='mvn test-compile'
+alias mvns='mvn site'
+alias mvndeps='mvn dependency:tree'
+alias mvnexec='mvn exec:java'
+
+# Gradle aliases
+alias grc='gradle clean'
+alias grb='gradle build'
+alias grt='gradle test'
+alias grr='gradle run'
+alias grboot='gradle bootRun'
+alias grjar='gradle jar'
+alias grwar='gradle war'
+alias grinstall='gradle install'
+alias grdeps='gradle dependencies'
+alias grtasks='gradle tasks'
+
+# Java runtime aliases
+alias java-version='java -version'
+alias javac-version='javac -version'
+alias mvn-version='mvn -version'
+alias gradle-version='gradle -version'
+
+# Spring Boot aliases
+alias spring='spring boot run'
+alias spring-boot='spring boot run'
+alias spring-new='spring init --dependencies=web,data-jpa,h2'
+
+# ============================================
+# Useful Functions
+# ============================================
+
+# Quick Maven project creation
+create_maven_proj() {
+    if [ -z "$1" ]; then
+        echo "Usage: create_maven_proj <project_name> [group_id] [artifact_id]"
+        return 1
+    fi
+    
+    local group_id=${2:-com.example}
+    local artifact_id=${3:-$1}
+    
+    cd ~/workspace
+    mvn archetype:generate \
+        -DgroupId=$group_id \
+        -DartifactId=$artifact_id \
+        -DarchetypeArtifactId=maven-archetype-quickstart \
+        -DinteractiveMode=false
+    
+    cd $artifact_id
+    echo "Created Maven project: $artifact_id"
+}
+
+# Quick Spring Boot project creation
+create_spring_proj() {
+    if [ -z "$1" ]; then
+        echo "Usage: create_spring_proj <project_name>"
+        return 1
+    fi
+    
+    cd ~/workspace
+    curl -G https://start.spring.io/starter.zip \
+        -d dependencies=web,data-jpa,h2 \
+        -d type=maven-project \
+        -d language=java \
+        -d bootVersion=3.1.0 \
+        -d baseDir=$1 \
+        -o $1.zip
+    
+    unzip $1.zip && rm $1.zip
+    cd $1
+    echo "Created Spring Boot project: $1"
+}
+
+# Quick Gradle project creation
+create_gradle_proj() {
+    if [ -z "$1" ]; then
+        echo "Usage: create_gradle_proj <project_name>"
+        return 1
+    fi
+    
+    cd ~/workspace
+    mkdir $1 && cd $1
+    
+    # Create basic Gradle project structure
+    mkdir -p src/main/java/com/example
+    mkdir -p src/test/java/com/example
+    mkdir -p src/main/resources
+    
+    # Create build.gradle
+    cat > build.gradle << 'EOF'
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}
+
+application {
+    mainClass = 'com.example.App'
+}
+EOF
+    
+    # Create settings.gradle
+    echo "rootProject.name = '$1'" > settings.gradle
+    
+    # Create main class
+    cat > src/main/java/com/example/App.java << 'EOF'
+package com.example;
+
+public class App {
+    public static void main(String[] args) {
+        System.out.println("Hello World!");
+    }
+}
+EOF
+    
+    # Create test class
+    cat > src/test/java/com/example/AppTest.java << 'EOF'
+package com.example;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class AppTest {
+    @Test
+    public void testApp() {
+        assertTrue("App should have a main method", true);
+    }
+}
+EOF
+    
+    echo "Created Gradle project: $1"
+}
+
+# Quick Java compilation and run
+run_java() {
+    if [ -z "$1" ]; then
+        echo "Usage: run_java <JavaFileName> [args...]"
+        return 1
+    fi
+    
+    local filename=${1%.java}
+    javac "$filename.java"
+    java "$filename" "${@:2}"
+}
+
+# ============================================
+# Custom Prompt
+# ============================================
+# Show Java version in prompt
+JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2)
+PS1='\[\033[01;32m\](Java:$JAVA_VERSION)\[\033[00m\] \[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
+
+# ============================================
+# Welcome Message
+# ============================================
+echo ""
+echo "=========================================="
+echo "  Java Docker Development Container"
+echo "=========================================="
+echo "  Java Version: $JAVA_VERSION"
+echo "  Maven:       $(mvn -version 2>&1 | head -n 1 | cut -d' ' -f3)"
+echo "  Gradle:      $(gradle -version 2>&1 | head -n 1 | cut -d' ' -f2)"
+echo "  Workspace:   ~/workspace"
+echo "  User:        $(whoami)"
+echo "=========================================="
+echo ""
+echo "Quick Commands:"
+echo "  jw              - Navigate to workspace"
+echo "  mvncp, grb      - Maven/Gradle build project"
+echo "  mvnt, grt       - Maven/Gradle test project"
+echo "  spring, grboot   - Run Spring Boot/Gradle app"
+echo ""
+echo "Project Creation:"
+echo "  create_maven_proj <name>    - Create Maven project"
+echo "  create_spring_proj <name>    - Create Spring Boot project"
+echo "  create_gradle_proj <name>    - Create Gradle project"
+echo ""
+echo "Type 'alias' to see all available shortcuts"
+echo "=========================================="
+echo ""
+
+# ============================================
+# Editor Configuration
+# ============================================
+export EDITOR=vim
+export VISUAL=vim

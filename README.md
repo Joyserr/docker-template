@@ -38,29 +38,28 @@ CONTAINER_NAME=my_dev_container
 WORKSPACE_DIR=/path/to/your/workspace
 ```
 
-### 3. 定制Dockerfile
+### 3. 选择开发环境模板
 
+**方法1：使用模板选择器（推荐）**
+```bash
+# 交互式选择模板
+make template-select
+
+# 直接使用指定模板
+make template-use TEMPLATE=python-3.11
+```
+
+**方法2：手动复制模板**
+```bash
+# 复制模板到主Dockerfile
+cp docker/templates/python/Dockerfile.3.11 docker/Dockerfile
+```
+
+**方法3：手动编写Dockerfile**
 编辑 `docker/Dockerfile` 文件，根据需要：
-
 - 修改基础镜像（FROM语句）
 - 安装所需的依赖和工具
 - 配置开发环境
-
-示例：构建Python开发环境
-
-```dockerfile
-FROM ubuntu:20.04
-
-# 安装Python
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    && apt-get clean
-
-# 安装Python包
-RUN pip3 install --user pip setuptools wheel
-RUN pip3 install numpy pandas matplotlib
-```
 
 ### 4. 构建镜像
 
@@ -115,11 +114,16 @@ make config             # 查看当前配置
 
 | 模板 | 基础镜像 | 主要工具 | 适用场景 |
 |------|---------|---------|---------|
-| **通用模板** | ubuntu:20.04 | 基础开发工具 | 通用开发环境 |
-| **Python** | python:3.11-slim | Python 3.11, pip, jupyter, pytest | Python开发、数据科学、机器学习 |
-| **Node.js** | node:18-slim | Node.js 18, npm, yarn, pnpm | Web前端、Node.js后端开发 |
-| **Java** | openjdk:11-slim | OpenJDK 11, Maven, Gradle | Java应用开发、Spring Boot |
-| **ROS** | ubuntu:20.04 | ROS Noetic, rosdep | 机器人开发、ROS应用 |
+| **ROS2 Humble** | ros:humble | ROS2 Humble, colcon, rviz2 | ROS2开发、机器人仿真、SLAM |
+| **ROS2 Foxy** | ros:foxy | ROS2 Foxy, colcon, rviz2 | ROS2开发、机器人仿真、SLAM |
+| **Python 3.11** | python:3.11-slim | Python 3.11, pip, jupyter, pytest | Python开发、数据科学、机器学习 |
+| **Python 3.12** | python:3.12-slim | Python 3.12, pip, jupyter, pytest | Python开发、数据科学、机器学习 |
+| **Node.js 18** | node:18-slim | Node.js 18, npm, yarn, pnpm | Web前端、Node.js后端开发 |
+| **Node.js 20** | node:20-slim | Node.js 20, npm, yarn, pnpm | Web前端、Node.js后端开发 |
+| **Java 11** | openjdk:11-slim | OpenJDK 11, Maven, Gradle | Java应用开发、Spring Boot |
+| **Java 17** | openjdk:17-slim | OpenJDK 17, Maven, Gradle | Java应用开发、Spring Boot |
+| **Go 1.22** | golang:1.22-bullseye | Go 1.22, go modules, tools | Go开发、微服务、CLI工具 |
+| **Ubuntu通用** | ubuntu:22.04 | Python, Node.js, Go, Java, Docker | 多语言开发、DevOps、全栈开发 |
 
 ### 快速使用模板
 
@@ -137,6 +141,28 @@ make build
 
 # 4. 运行容器
 make run
+```
+
+### 方法2：使用模板选择器（推荐）
+
+```bash
+# 交互式选择模板
+make template-select
+
+# 直接使用指定模板
+make template-use TEMPLATE=python-3.11
+
+# 选择模板并构建镜像
+make template-build TEMPLATE=nodejs-18
+
+# 选择模板并运行容器
+make template-run TEMPLATE=java-17
+
+# 列出所有可用模板
+make template-list
+
+# 查看模板详细信息
+make template-info TEMPLATE=ros2-humble
 ```
 
 #### 方法2：基于模板自定义

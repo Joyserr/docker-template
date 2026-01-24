@@ -1,7 +1,7 @@
-# Python dependencies for ROS1 Docker environment
+# Python dependencies for ROS2 Docker environment
 # Add your Python packages here, one per line
 
-# Common ROS1 Python packages
+# Common ROS2 Python packages
 # numpy>=1.19.0
 # scipy>=1.5.0
 # matplotlib>=3.3.0
@@ -24,33 +24,25 @@
 # pyyaml>=5.4.0
 # tqdm>=4.60.0
 
-# ROS1 specific Python packages
-# rospy (already installed with ROS1)
-# rospkg (already installed with ROS1)
+# ROS2 specific Python packages
+# rclpy (already installed with ROS2)
+# ament_copyright (already installed with ROS2)
 
-# Web frameworks (for ROS1 web interfaces)
+# Web frameworks (for ROS2 web interfaces)
 # fastapi>=0.68.0
 # uvicorn[standard]>=0.15.0
 # flask>=2.0.0
-# python-jose>=3.3.0
 
 # MQTT and networking
 # paho-mqtt>=1.5.0
+# websockets>=9.0
 
 # Testing and quality
 # pytest>=6.0.0
 # pytest-cov>=2.12.0
+# black>=21.0.0
+# flake8>=3.9.0
 
-# ROS1 visualization and analysis
-# tf2-tools (ROS2 equivalent)
-# geometry-msgs (ROS2 equivalent)
-
-# Robot-specific libraries
-# pyserial>=3.5
-# can>=4.0.0
-# pyusb1>=1.2.1
-
-# SLAM and navigation
-# gmapping>=1.4.0
-# robot-localization>=1.0.0
-# navigation2>=1.0.0
+# Documentation
+# sphinx>=4.0.0
+# sphinx-rtd-theme>=0.5.0

@@ -56,17 +56,71 @@ fi
 # 启用X11转发（用于GUI应用）
 xhost +local:docker > /dev/null 2>&1 || true
 
-# 运行容器
+# macOS 与 Linux 的网络与权限选项
+# 在 macOS 上 Docker Desktop 不支持 --network host，因此使用端口映射和 host.docker.internal 访问主机服务
+DOCKER_RUN_FLAGS=()
+
+# 基本运行参数
+DOCKER_RUN_FLAGS+=(--rm -it --name "${CONTAINER_NAME}" --user "${USER_UID}:${USER_GID}" -e DISPLAY="$DISPLAY" -w "/home/${USER_NAME}/workspace" -v "${WORKSPACE_DIR}:/home/${USER_NAME}/workspace:rw")
+
+# 根据主机系统选择网络模式与端口映射（可在 .env 中通过 EXTRA_PORTS 覆盖）
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    echo "Detected macOS: 使用端口映射替代 --network host（请确保使用 host.docker.internal 访问宿主机服务）"
+    EXTRA_PORTS="${EXTRA_PORTS:--p 1883:1883 -p 9001:9001}"
+    read -r -a PORT_TOKENS <<< "${EXTRA_PORTS}"
+    for ((i=0;i<${#PORT_TOKENS[@]};i+=2)); do
+        DOCKER_RUN_FLAGS+=("${PORT_TOKENS[i]}" "${PORT_TOKENS[i+1]}")
+    done
+    # 将 host.docker.internal 映射到容器（host-gateway 兼容时更稳定）
+    DOCKER_RUN_FLAGS+=(--add-host "host.docker.internal:host-gateway")
+else
+    # Linux 下直接使用 host 网络以简化主机服务访问
+    DOCKER_RUN_FLAGS+=(--network host)
+fi
+
+# 可选挂载 docker.sock（允许容器内使用 docker CLI 管理宿主上的容器）
+if [[ "${MOUNT_DOCKER_SOCK:-false}" == "true" ]]; then
+    DOCKER_RUN_FLAGS+=(-v /var/run/docker.sock:/var/run/docker.sock:rw)
+fi
+
+# 可选启用 GPU
+if [[ "${ENABLE_GPU:-false}" == "true" ]]; then
+    DOCKER_RUN_FLAGS+=(--gpus all)
+fi
+
+# 可选提升权限（危险：仅在确实需要时启用）
+if [[ "${ENABLE_PRIVILEGED:-false}" == "true" ]]; then
+    DOCKER_RUN_FLAGS+=(--privileged)
+fi
+
+# 额外的 capability，可以在 .env 设置 EXTRA_CAPS="NET_ADMIN SYS_PTRACE"
+if [[ -n "${EXTRA_CAPS:-}" ]]; then
+    for cap in ${EXTRA_CAPS}; do
+        DOCKER_RUN_FLAGS+=(--cap-add "${cap}")
+    done
+fi
+
+# IPC 和 /dev/shm
+DOCKER_RUN_FLAGS+=(--shm-size "${SHM_SIZE:-2g}" --ipc "${IPC_MODE:-host}")
+
+# 挂载 X11 socket（在 Linux 上有效；macOS 请使用 XQuartz + host.docker.internal 设置）
+DOCKER_RUN_FLAGS+=(-v /tmp/.X11-unix:/tmp/.X11-unix:rw)
+
+# 允许额外自定义参数
+if [[ -n "${EXTRA_DOCKER_ARGS:-}" ]]; then
+    read -r -a EXTRA_TOKENS <<< "${EXTRA_DOCKER_ARGS}"
+    for t in "${EXTRA_TOKENS[@]}"; do
+        DOCKER_RUN_FLAGS+=("${t}")
+    done
+fi
+
+# 最后追加镜像
+DOCKER_RUN_FLAGS+=("${IMAGE_NAME}:${IMAGE_TAG}")
+
+# 提示与运行
 echo "启动容器..."
-docker run --rm -it \
-    --name ${CONTAINER_NAME} \
-    --network host \
-    --user ${USER_UID}:${USER_GID} \
-    -e DISPLAY=$DISPLAY \
-    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-    -v ${WORKSPACE_DIR}:/home/${USER_NAME}/workspace:rw \
-    -w /home/${USER_NAME}/workspace \
-    ${IMAGE_NAME}:${IMAGE_TAG}
+echo "docker run ${DOCKER_RUN_FLAGS[*]}"
+docker run "${DOCKER_RUN_FLAGS[@]}"
 
 echo ""
 echo "========================================="

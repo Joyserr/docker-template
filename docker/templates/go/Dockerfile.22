@@ -1,0 +1,72 @@
+# Go 1.22 Docker开发环境模板
+ARG GO_VERSION=1.22
+FROM golang:${GO_VERSION}-bullseye
+
+# 避免交互式提示
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 设置时区为中国时区
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
+
+# 配置国内镜像源（Debian）
+RUN sed -i 's|http://deb.debian.org/debian|https://mirrors.ustc.edu.cn/debian|g' /etc/apt/sources.list && \
+    sed -i 's|http://security.debian.org|https://mirrors.ustc.edu.cn/debian-security|g' /etc/apt/sources.list
+
+# 更新apt源并安装基础开发工具
+RUN apt-get update && apt-get install -y \
+    vim \
+    wget \
+    htop \
+    tmux \
+    build-essential \
+    cmake \
+    git \
+    curl \
+    bash-completion \
+    sudo \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装Go开发工具
+RUN go install -a \
+    golang.org/x/tools/cmd/goimports@latest \
+    golang.org/x/tools/cmd/gopls@latest \
+    github.com/golangci/golangci-lint/cmd/golangci-lint@latest \
+    github.com/air-verse/air@latest \
+    github.com/swaggo/swag/cmd/swag@latest \
+    github.com/cosmtrek/air@latest
+
+# 设置Go环境变量
+ENV GOPATH=$HOME/go
+ENV GOBIN=$GOPATH/bin
+ENV PATH=$GOBIN:$PATH
+
+# 创建用户（与主机用户保持一致，避免权限问题）
+ARG USER_NAME=sysadmin
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+RUN groupadd -g ${USER_GID} ${USER_NAME} || true && \
+    useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash ${USER_NAME} && \
+    echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# 切换到用户
+USER ${USER_NAME}
+WORKDIR /home/${USER_NAME}
+
+# 设置Go工作空间
+RUN mkdir -p ~/go/src ~/go/bin ~/workspace
+WORKDIR /home/${USER_NAME}/workspace
+
+# 复制自定义 bashrc 配置
+COPY --chown=${USER_NAME}:${USER_NAME} docker/templates/go/bashrc /home/${USER_NAME}/.bashrc_docker
+
+# 配置Go环境（加载 Docker 专用配置）
+RUN echo "# Load Docker-specific Go configuration" >> ~/.bashrc && \
+    echo "if [ -f ~/.bashrc_docker ]; then" >> ~/.bashrc && \
+    echo "    source ~/.bashrc_docker" >> ~/.bashrc && \
+    echo "fi" >> ~/.bashrc
+
+# 默认启动bash
+CMD ["/bin/bash"]

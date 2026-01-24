@@ -46,9 +46,21 @@ help:
 	@echo "  docker/config/.env      - 环境变量配置"
 	@echo "  docker/config/.env.multiarch - 多架构构建配置"
 	@echo ""
+	@echo "模板命令:"
+	@echo "  make template-list     - 列出所有可用模板"
+	@echo "  make template-select  - 交互式选择模板"
+	@echo "  make template-use TEMPLATE=<name> - 使用指定模板"
+	@echo "  make template-build TEMPLATE=<name> - 选择模板并构建"
+	@echo "  make template-run TEMPLATE=<name> - 选择模板并运行"
+	@echo ""
+	@echo "配置文件:"
+	@echo "  docker/Dockerfile       - Docker镜像定义"
+	@echo "  docker/config/.env      - 环境变量配置"
+	@echo "  docker/config/.env.multiarch - 多架构构建配置"
+	@echo ""
 	@echo "模板示例:"
 	@echo "  docker/templates/       - 各种语言的Dockerfile示例"
-	@echo ""
+	@echo "  make template-info TEMPLATE=<name> - 显示模板详细信息"
 
 # 加载环境变量
 -include docker/config/.env
@@ -405,3 +417,78 @@ push-multiarch:
 		-f docker/Dockerfile \
 		.
 	@echo "$(GREEN)镜像推送完成$(NC)"
+
+# ========================================
+# 模板选择和管理命令
+# ========================================
+
+# 列出所有可用模板
+.PHONY: template-list
+template-list:
+	@echo "$(GREEN)=========================================$(NC)"
+	@echo "$(GREEN)可用的Docker开发环境模板$(NC)"
+	@echo "$(GREEN)=========================================$(NC)"
+	@echo ""
+	@echo "  $(YELLOW)ros1-noetic$(NC)      - ROS1 Noetic (Ubuntu 20.04)"
+	@echo "  $(YELLOW)ros2-humble$(NC)     - ROS2 Humble (Ubuntu 22.04)"
+	@echo "  $(YELLOW)ros2-foxy$(NC)       - ROS2 Foxy (Ubuntu 20.04)"
+	@echo "  $(YELLOW)python-3.11$(NC)     - Python 3.11 开发环境"
+	@echo "  $(YELLOW)python-3.12$(NC)     - Python 3.12 开发环境"
+	@echo "  $(YELLOW)nodejs-18$(NC)        - Node.js 18 开发环境"
+	@echo "  $(YELLOW)nodejs-20$(NC)        - Node.js 20 开发环境"
+	@echo "  $(YELLOW)java-11$(NC)         - Java 11 开发环境"
+	@echo "  $(YELLOW)java-17$(NC)         - Java 17 开发环境"
+	@echo "  $(YELLOW)go-22$(NC)            - Go 1.22 开发环境"
+	@echo "  $(YELLOW)ubuntu$(NC)          - Ubuntu 22.04 通用开发环境"
+	@echo ""
+
+# 交互式选择模板
+.PHONY: template-select
+template-select:
+	@echo "$(GREEN)=========================================$(NC)"
+	@echo "$(GREEN)选择Docker开发环境模板$(NC)"
+	@echo "$(GREEN)=========================================$(NC)"
+	@docker/scripts/template-selector.sh -s
+
+# 使用指定模板
+.PHONY: template-use
+template-use:
+	@if [ -z "$(TEMPLATE)" ]; then \
+		echo "$(RED)错误：请指定模板名称$(NC)"; \
+		echo "用法: make template-use TEMPLATE=<template_name>"; \
+		echo "可用模板："; \
+		echo "  ros1-noetic, ros2-humble, ros2-foxy, python-3.11, python-3.12"; \
+		echo "  nodejs-18, nodejs-20, java-11, java-17, go-22, ubuntu"; \
+	else \
+		docker/scripts/template-selector.sh -c $(TEMPLATE); \
+	fi
+
+# 选择模板并构建镜像
+.PHONY: template-build
+template-build:
+	@if [ -z "$(TEMPLATE)" ]; then \
+		echo "$(RED)错误：请指定模板名称$(NC)"; \
+		echo "用法: make template-build TEMPLATE=<template_name>"; \
+	else \
+		docker/scripts/template-selector.sh -b $(TEMPLATE); \
+	fi
+
+# 选择模板并运行容器
+.PHONY: template-run
+template-run:
+	@if [ -z "$(TEMPLATE)" ]; then \
+		echo "$(RED)错误：请指定模板名称$(NC)"; \
+		echo "用法: make template-run TEMPLATE=<template_name>"; \
+	else \
+		docker/scripts/template-selector.sh -r $(TEMPLATE); \
+	fi
+
+# 显示模板详细信息
+.PHONY: template-info
+template-info:
+	@if [ -z "$(TEMPLATE)" ]; then \
+		echo "$(RED)错误：请指定模板名称$(NC)"; \
+		echo "用法: make template-info TEMPLATE=<template_name>"; \
+	else \
+		docker/scripts/template-selector.sh -i $(TEMPLATE); \
+	fi

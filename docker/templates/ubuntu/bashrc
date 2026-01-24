@@ -1,0 +1,293 @@
+# Ubuntu Docker Container Configuration
+# This file is auto-loaded when entering container
+
+# ============================================
+# Basic Shell Configuration
+# ============================================
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# History configuration
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+
+# Check window size after each command
+shopt -s checkwinsize
+
+# Better tab completion
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+fi
+
+# ============================================
+# Color Support
+# ============================================
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# Colored GCC warnings and errors
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# ============================================
+# Multi-Language Environment Setup
+# ============================================
+echo "Loading multi-language development environment..."
+
+# Python environment
+export PATH="$HOME/.local/bin:$PATH"
+export PYTHONUNBUFFERED=1
+
+# Node.js environment
+export npm_config_prefix=$HOME/.npm-global
+export PATH="$HOME/.npm-global/bin:$PATH"
+
+# Go environment
+export GOPATH=$HOME/go
+export GOBIN=$GOPATH/bin
+export PATH=$GOBIN:$PATH
+export GOPROXY=https://goproxy.cn,direct
+export GO111MODULE=on
+
+# Java environment
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+export PATH=$JAVA_HOME/bin:$PATH
+
+# ============================================
+# Useful Aliases
+# ============================================
+# General aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# Workspace aliases
+alias ws='cd ~/workspace'
+alias wsrc='cd ~/workspace/src'
+
+# Python aliases
+alias py='python3'
+alias py3='python3'
+alias pip='pip3'
+alias venv='python3 -m venv'
+alias activate='source venv/bin/activate'
+alias pytest='python3 -m pytest'
+alias jupyter='jupyter notebook --no-browser --port=8888 --ip=0.0.0.0'
+
+# Node.js aliases
+alias ni='npm install'
+alias nig='npm install -g'
+alias nr='npm run'
+alias ndev='npm run dev'
+alias ntest='npm test'
+alias nbuild='npm run build'
+alias ya='yarn'
+alias yr='yarn run'
+
+# Go aliases
+alias grun='go run'
+alias gbuild='go build'
+alias gtest='go test'
+alias gvet='go vet'
+alias gfmt='go fmt'
+alias gmi='go mod init'
+alias gmt='go mod tidy'
+
+# Java aliases
+alias javac='javac'
+alias java='java'
+alias mvnc='mvn clean'
+alias mvncp='mvn clean package'
+alias mvnt='mvn test'
+alias grc='gradle clean'
+alias grb='gradle build'
+alias grt='gradle test'
+
+# Git aliases
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git pull'
+alias gs='git status'
+alias gd='git diff'
+alias gb='git branch'
+alias gco='git checkout'
+
+# Docker aliases
+alias d='docker'
+alias dc='docker-compose'
+alias dps='docker ps'
+alias di='docker images'
+alias db='docker build'
+alias dr='docker run'
+alias dlog='docker logs'
+alias dexec='docker exec'
+
+# System utilities
+alias htop='htop'
+alias tree='tree'
+alias less='less'
+alias cat='bat'
+alias find='rg'
+alias ps='ps aux'
+alias du='du -h'
+
+# ============================================
+# Useful Functions
+# ============================================
+
+# Quick project creation based on language
+create_proj() {
+    if [ -z "$1" ]; then
+        echo "Usage: create_proj <project_name> [language]"
+        echo "Languages: python, node, go, java, basic"
+        return 1
+    fi
+    
+    local language=${2:-basic}
+    cd ~/workspace
+    
+    case $language in
+        "python")
+            mkdir $1 && cd $1
+            python3 -m venv venv
+            source venv/bin/activate
+            echo "# $1" > README.md
+            echo "def main():"
+            echo "    print('Hello, World!')"
+            echo ""
+            echo "if __name__ == '__main__':"
+            echo "    main()" > main.py
+            ;;
+        "node")
+            mkdir $1 && cd $1
+            npm init -y
+            echo "console.log('Hello, World!');" > index.js
+            ;;
+        "go")
+            mkdir $1 && cd $1
+            go mod init $1
+            echo "package main" > main.go
+            echo "" >> main.go
+            echo "import \"fmt\"" >> main.go
+            echo "" >> main.go
+            echo "func main() {" >> main.go
+            echo "    fmt.Println(\"Hello, World!\")" >> main.go
+            echo "}" >> main.go
+            ;;
+        "java")
+            mkdir -p $1/src && cd $1
+            cat > pom.xml << 'EOF'
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>$1</artifactId>
+    <version>1.0.0</version>
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+</project>
+EOF
+            echo "public class App {" > src/App.java
+            echo "    public static void main(String[] args) {" >> src/App.java
+            echo "        System.out.println(\"Hello, World!\");" >> src/App.java
+            echo "    }" >> src/App.java
+            echo "}" >> src/App.java
+            ;;
+        "basic"*)
+            mkdir $1 && cd $1
+            echo "# $1" > README.md
+            ;;
+    esac
+    
+    echo "Created $language project: $1"
+}
+
+# Quick environment check
+check_env() {
+    echo "=== Environment Check ==="
+    echo "Python: $(python3 --version 2>&1)"
+    echo "Node.js: $(node --version 2>&1)"
+    echo "Go: $(go version 2>&1 | cut -d' ' -f3)"
+    echo "Java: $(java -version 2>&1 | head -n 1 | cut -d'"' -f2)"
+    echo "Maven: $(mvn -version 2>&1 | head -n 1 | cut -d' ' -f3)"
+    echo "Gradle: $(gradle -version 2>&1 | head -n 1 | cut -d' ' -f2)"
+    echo "Docker: $(docker --version 2>&1 | cut -d' ' -f3 | cut -d',' -f1)"
+    echo "====================="
+}
+
+# Quick dependency checker
+check_deps() {
+    if [ -f "package.json" ]; then
+        echo "Node.js dependencies found"
+        npm audit
+    fi
+    
+    if [ -f "go.mod" ]; then
+        echo "Go dependencies found"
+        go mod verify
+    fi
+    
+    if [ -f "pom.xml" ]; then
+        echo "Maven dependencies found"
+        mvn dependency:tree
+    fi
+}
+
+# ============================================
+# Custom Prompt
+# ============================================
+# Show multiple language versions in prompt
+PS1='\[\033[01;32m\](Ubuntu Dev)\[\033[00m\] \[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
+
+# ============================================
+# Welcome Message
+# ============================================
+echo ""
+echo "=========================================="
+echo "  Ubuntu Multi-Language Dev Container"
+echo "=========================================="
+echo "  Ubuntu:     $(lsb_release -rs 2>/dev/null | cut -d':' -f2 | tr -d '\t')"
+echo "  Python:      $(python3 --version 2>&1)"
+echo "  Node.js:     $(node --version 2>&1)"
+echo "  Go:          $(go version 2>&1 | cut -d' ' -f3)"
+echo "  Java:        $(java -version 2>&1 | head -n 1 | cut -d'"' -f2)"
+echo "  Workspace:   ~/workspace"
+echo "  User:        $(whoami)"
+echo "=========================================="
+echo ""
+echo "Quick Commands:"
+echo "  ws            - Navigate to workspace"
+echo "  create_proj   - Create new project"
+echo "  check_env     - Check all language versions"
+echo "  check_deps    - Check project dependencies"
+echo ""
+echo "Language Aliases:"
+echo "  Python: py, pip, venv"
+echo "  Node.js: ni, nr, ya"
+echo "  Go: grun, gbuild, gfmt"
+echo "  Java: mvnc, grb, grt"
+echo "  Git: ga, gc, gp, gs"
+echo "  Docker: d, dc, dps"
+echo ""
+echo "Type 'alias' to see all available shortcuts"
+echo "=========================================="
+echo ""
+
+# ============================================
+# Editor Configuration
+# ============================================
+export EDITOR=vim
+export VISUAL=vim

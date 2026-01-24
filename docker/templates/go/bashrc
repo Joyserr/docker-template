@@ -1,0 +1,287 @@
+# Go Docker Container Configuration
+# This file is auto-loaded when entering container
+
+# ============================================
+# Basic Shell Configuration
+# ============================================
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# History configuration
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+
+# Check window size after each command
+shopt -s checkwinsize
+
+# Better tab completion
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+fi
+
+# ============================================
+# Color Support
+# ============================================
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# Colored GCC warnings and errors
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01:32:locus=01:quote=01'
+
+# ============================================
+# Go Environment Setup
+# ============================================
+echo "Loading Go development environment..."
+
+# Go environment variables
+export GOPATH=$HOME/go
+export GOBIN=$GOPATH/bin
+export PATH=$GOBIN:$PATH
+
+# Go proxy for faster downloads in China
+export GOPROXY=https://goproxy.cn,direct
+export GOSUMDB=sum.golang.google.cn
+
+# Enable Go modules
+export GO111MODULE=on
+
+# ============================================
+# Useful Aliases
+# ============================================
+# General aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# Go workspace aliases
+alias gw='cd ~/workspace'
+alias gsrc='cd ~/workspace'
+alias gopath='cd $GOPATH/src'
+alias gobin='cd $GOBIN'
+
+# Go build aliases
+alias gbuild='go build'
+alias ginstall='go install'
+alias grun='go run'
+alias gget='go get'
+alias gmod='go mod'
+alias gtest='go test'
+alias gvet='go vet'
+alias gfmt='go fmt'
+
+# Go module aliases
+alias gmi='go mod init'
+alias gmt='go mod tidy'
+alias gmd='go mod download'
+alias gmv='go mod verify'
+alias gmg='go mod graph'
+
+# Development aliases
+alias gt='go test ./...'
+alias gta='go test -v ./...'
+alias gtc='go test -cover ./...'
+alias gtr='go test -race ./...'
+
+# Tool aliases
+alias air='air -c .air.toml'
+alias swag='swag init'
+alias golangci='golangci-lint run'
+alias gci='goimports -w .'
+
+# Repository aliases
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git pull'
+alias gs='git status'
+
+# ============================================
+# Useful Functions
+# ============================================
+
+# Quick Go project creation
+create_go_proj() {
+    if [ -z "$1" ]; then
+        echo "Usage: create_go_proj <project_name> [module_path]"
+        return 1
+    fi
+    
+    local module_path=${2:-github.com/username/$1}
+    
+    cd ~/workspace
+    mkdir $1 && cd $1
+    
+    # Initialize Go module
+    go mod init $module_path
+    
+    # Create basic project structure
+    mkdir -p cmd/$1
+    mkdir -p pkg
+    mkdir -p internal
+    mkdir -p configs
+    mkdir -p scripts
+    
+    # Create main.go
+    cat > cmd/$1/main.go << EOF
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    fmt.Println("Hello, World!")
+}
+EOF
+    
+    # Create .gitignore
+    cat > .gitignore << EOF
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with go test -c
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+vendor/
+
+# Go workspace file
+go.work
+
+# Air live reload
+.air.toml
+tmp/
+EOF
+    
+    # Create Air config for hot reload
+    cat > .air.toml << EOF
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+args_bin = []
+bin = "./tmp/main"
+cmd = "go build -o ./tmp/main ./cmd/$1"
+delay = 1000
+exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+exclude_file = []
+exclude_regex = ["_test.go"]
+exclude_unchanged = false
+follow_symlink = false
+full_bin = ""
+include_dir = []
+include_ext = ["go", "tpl", "tmpl", "html"]
+kill_delay = "0s"
+log = "build-errors.log"
+send_interrupt = false
+stop_on_root = false
+
+[color]
+app = ""
+build = "yellow"
+main = "magenta"
+runner = "green"
+watcher = "cyan"
+
+[log]
+time = false
+main_only = false
+
+[misc]
+clean_on_exit = false
+EOF
+    
+    cd ..
+    echo "Created Go project: $1"
+    echo "Module: $module_path"
+}
+
+# Quick Go run with live reload
+run_go_dev() {
+    if [ ! -f ".air.toml" ]; then
+        echo "No .air.toml found. Use create_go_proj to create a project first."
+        return 1
+    fi
+    air
+}
+
+# Quick Go install with verbose output
+install_go_tool() {
+    if [ -z "$1" ]; then
+        echo "Usage: install_go_tool <package_path>"
+        echo "Example: install_go_tool github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+        return 1
+    fi
+    go install -v $1
+}
+
+# Quick dependency management
+add_go_dep() {
+    if [ -z "$1" ]; then
+        echo "Usage: add_go_dep <package_path>"
+        return 1
+    fi
+    go get $1
+    go mod tidy
+}
+
+# ============================================
+# Custom Prompt
+# ============================================
+# Show Go version in prompt
+GO_VERSION=$(go version 2>&1 | cut -d' ' -f3)
+PS1='\[\033[01;32m\](Go:$GO_VERSION)\[\033[00m\] \[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
+
+# ============================================
+# Welcome Message
+# ============================================
+echo ""
+echo "=========================================="
+echo "  Go Docker Development Container"
+echo "=========================================="
+echo "  Go Version: $GO_VERSION"
+echo "  GOPATH:     $GOPATH"
+echo "  Workspace:  ~/workspace"
+echo "  User:       $(whoami)"
+echo "=========================================="
+echo ""
+echo "Quick Commands:"
+echo "  gw, gsrc      - Navigate to workspace"
+echo "  grun, gbuild  - Run and build Go programs"
+echo "  gmt, gmi      - Module tidy and init"
+echo "  gtest, gvet   - Test and vet code"
+echo "  air            - Live reload development"
+echo ""
+echo "Project Creation:"
+echo "  create_go_proj <name> - Create new Go project"
+echo "  run_go_dev           - Start development with hot reload"
+echo ""
+echo "Type 'alias' to see all available shortcuts"
+echo "=========================================="
+echo ""
+
+# ============================================
+# Editor Configuration
+# ============================================
+export EDITOR=vim
+export VISUAL=vim

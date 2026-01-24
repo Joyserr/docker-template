@@ -1,0 +1,261 @@
+# Node.js Docker Container Configuration
+# This file is auto-loaded when entering container
+
+# ============================================
+# Basic Shell Configuration
+# ============================================
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# History configuration
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+
+# Check window size after each command
+shopt -s checkwinsize
+
+# Better tab completion
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+fi
+
+# ============================================
+# Color Support
+# ============================================
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# Colored GCC warnings and errors
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01:32:locus=01:quote=01'
+
+# ============================================
+# Node.js Environment Setup
+# ============================================
+echo "Loading Node.js development environment..."
+
+# Node.js environment variables
+export NODE_ENV=development
+export npm_config_prefix=$HOME/.npm-global
+export PATH="$HOME/.npm-global/bin:$PATH"
+
+# Yarn configuration
+export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+
+# PNPM configuration
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+
+# ============================================
+# Useful Aliases
+# ============================================
+# General aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# Node.js workspace aliases
+alias nw='cd ~/workspace'
+alias nsrc='cd ~/workspace/src'
+alias ntest='cd ~/workspace && npm test'
+alias nstart='cd ~/workspace && npm start'
+alias ndev='cd ~/workspace && npm run dev'
+alias nbuild='cd ~/workspace && npm run build'
+
+# Package manager aliases
+alias ni='npm install'
+alias nig='npm install -g'
+alias nr='npm run'
+alias nrm='npm remove'
+alias nrun='npm run'
+alias npub='npm publish'
+
+# Yarn aliases
+alias ya='yarn add'
+alias yg='yarn global add'
+alias yr='yarn run'
+alias yrm='yarn remove'
+alias yup='yarn upgrade'
+
+# PNPM aliases
+alias pa='pnpm add'
+alias pg='pnpm add -g'
+alias pr='pnpm run'
+alias prm='pnpm remove'
+alias pup='pnpm update'
+
+# Development aliases
+alias ndev='npm run dev'
+alias ntest='npm test'
+alias nbuild='npm run build'
+alias nlint='npm run lint'
+alias nformat='npm run format'
+alias nclean='npm run clean'
+
+# TypeScript aliases
+alias tc='tsc'
+alias tw='tsc --watch'
+alias td='ts-node'
+alias tdr='ts-node-dev'
+
+# Testing aliases
+alias jest='jest'
+alias mocha='mocha'
+alias ntc='npm run test:coverage'
+
+# Framework aliases
+alias cra='create-react-app'
+alias cna='create-next-app'
+alias ng='@angular/cli'
+alias vue='@vue/cli'
+alias nest='@nestjs/cli'
+
+# Build tools aliases
+alias wp='webpack'
+alias wps='webpack serve'
+alias vt='vite'
+alias ps='parcel'
+alias rl='rollup'
+
+# ============================================
+# Useful Functions
+# ============================================
+
+# Quick Node.js project creation
+create_node_proj() {
+    if [ -z "$1" ]; then
+        echo "Usage: create_node_proj <project_name> [template]"
+        echo "Templates: basic, react, vue, angular, express"
+        return 1
+    fi
+    
+    local template=${2:-basic}
+    cd ~/workspace
+    
+    case $template in
+        "react")
+            npx create-react-app $1
+            ;;
+        "vue")
+            npx @vue/cli create $1
+            ;;
+        "angular")
+            npx @angular/cli new $1
+            ;;
+        "express")
+            mkdir $1 && cd $1
+            npm init -y
+            npm install express
+            ;;
+        "basic"|*)
+            mkdir $1 && cd $1
+            npm init -y
+            ;;
+    esac
+    
+    cd $1
+    echo "Created Node.js project: $1 ($template)"
+}
+
+# Quick package installation with different managers
+install_pkg() {
+    if [ -z "$1" ]; then
+        echo "Usage: install_pkg <package_name> [manager]"
+        echo "Managers: npm, yarn, pnpm"
+        return 1
+    fi
+    
+    local manager=${2:-npm}
+    case $manager in
+        "yarn")
+            yarn add $@
+            ;;
+        "pnpm")
+            pnpm add $@
+            ;;
+        "npm"|*)
+            npm install $@
+            ;;
+    esac
+}
+
+# Quick global package installation
+install_global() {
+    if [ -z "$1" ]; then
+        echo "Usage: install_global <package_name> [manager]"
+        return 1
+    fi
+    
+    local manager=${2:-npm}
+    case $manager in
+        "yarn")
+            yarn global add $@
+            ;;
+        "pnpm")
+            pnpm add -g $@
+            ;;
+        "npm"|*)
+            npm install -g $@
+            ;;
+    esac
+}
+
+# Quick script runner
+run_script() {
+    if [ -z "$1" ]; then
+        echo "Usage: run_script <script_name>"
+        return 1
+    fi
+    npm run $1
+}
+
+# ============================================
+# Custom Prompt
+# ============================================
+# Show Node.js version in prompt
+NODE_VERSION=$(node --version 2>&1)
+PS1='\[\033[01;32m\](Node.js:$NODE_VERSION)\[\033[00m\] \[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
+
+# ============================================
+# Welcome Message
+# ============================================
+echo ""
+echo "=========================================="
+echo "  Node.js Docker Development Container"
+echo "=========================================="
+echo "  Node.js Version: $NODE_VERSION"
+echo "  Workspace:     ~/workspace"
+echo "  User:          $(whoami)"
+echo "=========================================="
+echo ""
+echo "Quick Commands:"
+echo "  nw             - Navigate to workspace"
+echo "  ni, ya, pa     - Install packages (npm/yarn/pnpm)"
+echo "  nr, yr, pr     - Run npm scripts"
+echo "  ndev, ntest    - Development and test"
+echo "  cra, cna, ng   - Create projects"
+echo ""
+echo "Package Managers:"
+echo "  npm (default), yarn, pnpm"
+echo "  Use install_pkg <pkg> <manager> to choose"
+echo ""
+echo "Type 'alias' to see all available shortcuts"
+echo "=========================================="
+echo ""
+
+# ============================================
+# Editor Configuration
+# ============================================
+export EDITOR=vim
+export VISUAL=vim
