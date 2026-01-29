@@ -52,15 +52,15 @@ help:
 	@echo "  make template-use TEMPLATE=<name> - 使用指定模板"
 	@echo "  make template-build TEMPLATE=<name> - 选择模板并构建"
 	@echo "  make template-run TEMPLATE=<name> - 选择模板并运行"
+	@echo "  make template-info TEMPLATE=<name> - 显示模板详细信息"
 	@echo ""
 	@echo "配置文件:"
 	@echo "  docker/Dockerfile       - Docker镜像定义"
 	@echo "  docker/config/.env      - 环境变量配置"
 	@echo "  docker/config/.env.multiarch - 多架构构建配置"
 	@echo ""
-	@echo "模板示例:"
+	@echo "模板目录:"
 	@echo "  docker/templates/       - 各种语言的Dockerfile示例"
-	@echo "  make template-info TEMPLATE=<name> - 显示模板详细信息"
 
 # 加载环境变量
 -include docker/config/.env
@@ -108,6 +108,16 @@ init:
 	fi
 	@echo "$(GREEN)配置初始化完成！$(NC)"
 	@echo "$(GREEN)请检查 docker/config/.env 文件并根据需要进行调整$(NC)"
+	@$(MAKE) fix-permissions
+
+# 修复脚本权限
+.PHONY: fix-permissions
+fix-permissions:
+	@echo "$(GREEN)修复脚本执行权限...$(NC)"
+	@chmod +x docker/scripts/*.sh 2>/dev/null || true
+	@chmod +x docker/scripts/*/*.sh 2>/dev/null || true
+	@chmod +x docker/scripts/*/*/*.sh 2>/dev/null || true
+	@echo "$(GREEN)脚本权限修复完成$(NC)"
 
 # 设置默认值
 USER_NAME ?= $(shell whoami)

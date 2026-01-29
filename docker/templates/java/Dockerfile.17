@@ -2,6 +2,9 @@
 ARG JAVA_VERSION=17
 FROM openjdk:${JAVA_VERSION}-slim
 
+# 构建参数：是否使用国内镜像源
+ARG USE_CN_MIRROR=true
+
 # 避免交互式提示
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -9,12 +12,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone
 
-# 配置国内镜像源（Debian）
-RUN sed -i 's|http://deb.debian.org/debian|https://mirrors.ustc.edu.cn/debian|g' /etc/apt/sources.list && \
-    sed -i 's|http://security.debian.org|https://mirrors.ustc.edu.cn/debian-security|g' /etc/apt/sources.list
+# 配置镜像源（根据构建参数选择）
+RUN if [ "$USE_CN_MIRROR" = "true" ]; then \
+        sed -i 's|http://deb.debian.org/debian|https://mirrors.ustc.edu.cn/debian|g' /etc/apt/sources.list && \
+        sed -i 's|http://security.debian.org|https://mirrors.ustc.edu.cn/debian-security|g' /etc/apt/sources.list; \
+    fi
 
-# 更新apt源并安装基础开发工具
+# 合并 apt 安装步骤，减少层数
 RUN apt-get update && apt-get install -y \
+    # 基础开发工具
     vim \
     wget \
     htop \
@@ -26,13 +32,14 @@ RUN apt-get update && apt-get install -y \
     bash-completion \
     sudo \
     unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-# 安装Java开发工具
-RUN apt-get update && apt-get install -y \
+    # Java 构建工具
     maven \
     gradle \
     ant \
+    # 其他有用工具
+    tree \
+    less \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 # 设置Java环境变量
@@ -54,13 +61,6 @@ RUN wget -O /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.4
 
 ENV GRADLE_HOME=/opt/gradle-8.4
 ENV PATH=$GRADLE_HOME/bin:$PATH
-
-# 安装其他有用工具
-RUN apt-get update && apt-get install -y \
-    tree \
-    less \
-    jq \
-    && rm -rf /var/lib/apt/lists/*
 
 # 创建用户（与主机用户保持一致，避免权限问题）
 ARG USER_NAME=sysadmin
@@ -87,6 +87,10 @@ RUN echo "# Load Docker-specific Java configuration" >> ~/.bashrc && \
     echo "if [ -f ~/.bashrc_docker ]; then" >> ~/.bashrc && \
     echo "    source ~/.bashrc_docker" >> ~/.bashrc && \
     echo "fi" >> ~/.bashrc
+
+# 健康检查：检查 bash 进程是否运行
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD pgrep -x "bash" > /dev/null || exit 1
 
 # 默认启动bash
 CMD ["/bin/bash"]

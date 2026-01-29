@@ -3,6 +3,9 @@
 ARG ROS_DISTRO=humble
 FROM ros:${ROS_DISTRO}
 
+# 构建参数：是否使用国内镜像源
+ARG USE_CN_MIRROR=true
+
 # 避免交互式提示
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -10,13 +13,16 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone
 
-# 配置国内镜像源（Ubuntu）
-RUN sed -i 's|http://archive.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
-    sed -i 's|http://security.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
-    sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.ustc.edu.cn/ubuntu-ports|g' /etc/apt/sources.list
+# 配置镜像源（根据构建参数选择）
+RUN if [ "$USE_CN_MIRROR" = "true" ]; then \
+        sed -i 's|http://archive.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
+        sed -i 's|http://security.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
+        sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.ustc.edu.cn/ubuntu-ports|g' /etc/apt/sources.list; \
+    fi
 
-# 更新apt源并安装基础开发工具
+# 合并所有 apt 安装步骤，减少层数并优化缓存
 RUN apt-get update && apt-get install -y \
+    # 基础开发工具
     vim \
     wget \
     htop \
@@ -31,10 +37,7 @@ RUN apt-get update && apt-get install -y \
     python3-vcstool \
     bash-completion \
     curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# 安装ROS2开发工具
-RUN apt-get update && apt-get install -y \
+    # ROS2 核心开发工具
     ros-${ROS_DISTRO}-desktop \
     ros-${ROS_DISTRO}-rviz2 \
     ros-${ROS_DISTRO}-gazebo-ros-pkgs \
@@ -46,10 +49,7 @@ RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-tf2-geometry-msgs \
     ros-${ROS_DISTRO}-navigation2 \
     ros-${ROS_DISTRO}-nav2-bringup \
-    && rm -rf /var/lib/apt/lists/*
-
-# 安装额外的ROS2工具
-RUN apt-get update && apt-get install -y \
+    # 额外的 ROS2 工具
     ros-${ROS_DISTRO}-demo-nodes-cpp \
     ros-${ROS_DISTRO}-demo-nodes-py \
     ros-${ROS_DISTRO}-launch-testing \
@@ -87,6 +87,10 @@ RUN echo "# Load Docker-specific ROS2 configuration" >> ~/.bashrc && \
     echo "if [ -f ~/.bashrc_docker ]; then" >> ~/.bashrc && \
     echo "    source ~/.bashrc_docker" >> ~/.bashrc && \
     echo "fi" >> ~/.bashrc
+
+# 健康检查：检查 bash 进程是否运行
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD pgrep -x "bash" > /dev/null || exit 1
 
 # 默认启动bash
 CMD ["/bin/bash"]
