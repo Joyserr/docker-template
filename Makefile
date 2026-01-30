@@ -135,23 +135,17 @@ clean:
 # 在运行中的容器中执行命令
 .PHONY: exec
 exec:
-	@if [ -z "$(CMD)" ]; then \
-		echo "$(RED)错误: 请指定要执行的命令$(NC)"; \
-		echo "用法: make exec CMD='bash'"; \
-		exit 1; \
-	fi
-	@echo "$(GREEN)在容器中执行命令: $(CMD)$(NC)"
-	@docker exec -it $(CONTAINER_NAME) $(CMD)
+	@docker/scripts/run/docker-exec.sh $(CMD)
 
 # 查看容器日志
 .PHONY: logs
 logs:
-	@docker logs -f $(CONTAINER_NAME)
+	@docker/scripts/run/docker-logs.sh
 
 # 查看容器状态
 .PHONY: ps
 ps:
-	@docker ps -a | grep $(CONTAINER_NAME) || echo "容器 $(CONTAINER_NAME) 不存在"
+	@docker/scripts/run/docker-status.sh
 
 # 查看镜像列表
 .PHONY: images
@@ -165,20 +159,12 @@ rebuild:
 
 # 进入容器bash
 .PHONY: bash
-bash:
-	@docker exec -it $(CONTAINER_NAME) bash
+bash: enter
 
 # 进入已运行的容器（带状态检查）
 .PHONY: enter
 enter:
-	@if [ "$(shell docker ps -q -f name=$(CONTAINER_NAME) -f status=running)" = "" ]; then \
-		echo "错误: 容器 $(CONTAINER_NAME) 未运行"; \
-		echo "请先运行 'make run' 启动容器"; \
-		exit 1; \
-	else \
-		echo "正在进入容器 $(CONTAINER_NAME)..."; \
-		docker exec -it $(CONTAINER_NAME) bash; \
-	fi
+	@docker/scripts/run/docker-exec.sh bash
 
 # 查看配置
 .PHONY: config
