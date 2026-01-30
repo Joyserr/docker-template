@@ -179,37 +179,40 @@ select_template() {
     echo -e "  ${GREEN}11${NC}. ${YELLOW}ubuntu${NC}           - ${BLUE}$UBUNTU${NC}"
     
     echo ""
-    read -p "请输入模板编号 (1-10) [输入q退出]: " choice
+    read -p "请输入模板编号 (1-11) [输入q退出]: " choice
     
     case $choice in
         1)
-            copy_template "ros2-humble"
+            copy_template "ros1-noetic"
             ;;
         2)
-            copy_template "ros2-foxy"
+            copy_template "ros2-humble"
             ;;
         3)
-            copy_template "python-3.11"
+            copy_template "ros2-foxy"
             ;;
         4)
-            copy_template "python-3.12"
+            copy_template "python-3.11"
             ;;
         5)
-            copy_template "nodejs-18"
+            copy_template "python-3.12"
             ;;
         6)
-            copy_template "nodejs-20"
+            copy_template "nodejs-18"
             ;;
         7)
-            copy_template "java-11"
+            copy_template "nodejs-20"
             ;;
         8)
-            copy_template "java-17"
+            copy_template "java-11"
             ;;
         9)
-            copy_template "go-22"
+            copy_template "java-17"
             ;;
         10)
+            copy_template "go-22"
+            ;;
+        11)
             copy_template "ubuntu"
             ;;
         q|Q)

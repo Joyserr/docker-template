@@ -43,21 +43,43 @@ fi
 
 # 生成 .env 文件
 cat > "$ENV_FILE" << EOF
-# user configuration (auto-generated)
+# ========================================
+# Docker 镜像配置文件 (由 init-env.sh 自动生成)
+# ========================================
+
+# 用户配置（与主机用户保持一致，避免权限问题）
 USER_NAME=$DETECTED_USER
 USER_UID=$DETECTED_UID
 USER_GID=$DETECTED_GID
 
-# Docker image configuration
-IMAGE_NAME=docker-template
+# Docker 镜像配置
+IMAGE_NAME=my-dev-image
 IMAGE_TAG=latest
-CONTAINER_NAME=docker-template-container
+CONTAINER_NAME=my_dev_container
 
-# ROS distribution configuration
+# ROS 配置 (如果使用 ROS 模板)
 ROS_DISTRO=noetic
 
-# mount workspace directory configuration (auto-generated)
+# GUI 支持
+ENABLE_GUI=true
+
+# GPU 支持 (需要 nvidia-docker2)
+ENABLE_GPU=false
+
+# 提升权限 (危险：仅在确实需要时启用)
+ENABLE_PRIVILEGED=false
+
+# 挂载 Docker Socket
+MOUNT_DOCKER_SOCK=false
+
+# 工作空间目录 (挂载到容器中的目录)
 WORKSPACE_DIR=$DETECTED_WORKSPACE
+
+# 共享内存大小
+SHM_SIZE=2g
+
+# IPC 模式
+IPC_MODE=host
 EOF
 
 echo ""

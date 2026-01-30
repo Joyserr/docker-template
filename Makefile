@@ -68,55 +68,15 @@ help:
 # 初始化配置
 .PHONY: init
 init:
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo "$(GREEN)初始化Docker开发环境$(NC)"
-	@echo "$(GREEN)=========================================$(NC)"
-	@if [ ! -f docker/config/.env ]; then \
-	    echo "创建配置文件 docker/config/.env"; \
-	    cp docker/config/.env.examples docker/config/.env 2>/dev/null || { \
-	        echo "# ========================================" > docker/config/.env; \
-	        echo "# Docker镜像配置文件" >> docker/config/.env; \
-	        echo "# ========================================" >> docker/config/.env; \
-	        echo "# 修改此文件来配置你的Docker镜像" >> docker/config/.env; \
-	        echo "" >> docker/config/.env; \
-	        echo "# 用户配置（与主机用户保持一致，避免权限问题）" >> docker/config/.env; \
-	        echo "USER_NAME=$(shell whoami)" >> docker/config/.env; \
-	        echo "USER_UID=$(shell id -u)" >> docker/config/.env; \
-	        echo "USER_GID=$(shell id -g)" >> docker/config/.env; \
-	        echo "" >> docker/config/.env; \
-	        echo "# Docker镜像配置" >> docker/config/.env; \
-	        echo "IMAGE_NAME=my-ros-dev-image" >> docker/config/.env; \
-	        echo "IMAGE_TAG=latest" >> docker/config/.env; \
-	        echo "CONTAINER_NAME=my_ros_dev_container" >> docker/config/.env; \
-	        echo "" >> docker/config/.env; \
-	        echo "# 工作空间目录（挂载到容器中的目录）" >> docker/config/.env; \
-	        echo "WORKSPACE_DIR=$(shell pwd)" >> docker/config/.env; \
-	    }; \
-	else \
-	    echo "配置文件 docker/config/.env 已存在"; \
-	    echo "正在更新用户信息..."; \
-	    sed -i.bak 's/^USER_NAME=.*/USER_NAME=$(shell whoami)/' docker/config/.env && rm -f docker/config/.env.bak; \
-	    sed -i.bak 's/^USER_UID=.*/USER_UID=$(shell id -u)/' docker/config/.env && rm -f docker/config/.env.bak; \
-	    sed -i.bak 's/^USER_GID=.*/USER_GID=$(shell id -g)/' docker/config/.env && rm -f docker/config/.env.bak; \
-	    if ! grep -q "WORKSPACE_DIR" docker/config/.env; then \
-	        echo "" >> docker/config/.env; \
-	        echo "# 工作空间目录（挂载到容器中的目录）" >> docker/config/.env; \
-	        echo "WORKSPACE_DIR=$(shell pwd)" >> docker/config/.env; \
-	    else \
-	        sed -i.bak 's|^WORKSPACE_DIR=.*|WORKSPACE_DIR=$(shell pwd)|' docker/config/.env && rm -f docker/config/.env.bak; \
-	    fi; \
-	fi
-	@echo "$(GREEN)配置初始化完成！$(NC)"
-	@echo "$(GREEN)请检查 docker/config/.env 文件并根据需要进行调整$(NC)"
+	@chmod +x docker/scripts/utils/init-env.sh
+	@docker/scripts/utils/init-env.sh
 	@$(MAKE) fix-permissions
 
 # 修复脚本权限
 .PHONY: fix-permissions
 fix-permissions:
 	@echo "$(GREEN)修复脚本执行权限...$(NC)"
-	@chmod +x docker/scripts/*.sh 2>/dev/null || true
-	@chmod +x docker/scripts/*/*.sh 2>/dev/null || true
-	@chmod +x docker/scripts/*/*/*.sh 2>/dev/null || true
+	@find docker/scripts -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
 	@echo "$(GREEN)脚本权限修复完成$(NC)"
 
 # 设置默认值
@@ -138,39 +98,28 @@ NC := \033[0m # No Color
 
 # 构建镜像
 .PHONY: build
-build:
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo "$(GREEN)构建Docker镜像$(NC)"
-	@echo "$(GREEN)=========================================$(NC)"
+build: fix-permissions
 	@docker/scripts/build/docker-build.sh
 
 # 运行容器（交互式）
 .PHONY: run
-run:
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo "$(GREEN)启动容器（交互式）$(NC)"
-	@echo "$(GREEN)=========================================$(NC)"
+run: fix-permissions
 	@docker/scripts/run/docker-run.sh
 
 # 运行容器（后台模式）
 .PHONY: run-d
-run-d:
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo "$(GREEN)启动容器（后台模式）$(NC)"
-	@echo "$(GREEN)=========================================$(NC)"
+run-d: fix-permissions
 	@docker/scripts/run/docker-run-detach.sh
 
 # 停止容器
 .PHONY: stop
 stop:
-	@echo "$(YELLOW)停止容器: $(CONTAINER_NAME)$(NC)"
-	@docker stop $(CONTAINER_NAME) 2>/dev/null || true
+	@docker/scripts/run/docker-stop.sh
 
 # 删除容器
 .PHONY: rm
 rm:
-	@echo "$(YELLOW)删除容器: $(CONTAINER_NAME)$(NC)"
-	@docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
+	@docker/scripts/run/docker-stop.sh
 
 # 删除镜像
 .PHONY: rmi
@@ -180,9 +129,8 @@ rmi:
 
 # 清理容器和镜像
 .PHONY: clean
-clean: stop rm
-	@echo "$(RED)清理容器和镜像$(NC)"
-	@docker rmi -f $(IMAGE_NAME):$(IMAGE_TAG) 2>/dev/null || true
+clean:
+	@docker/scripts/run/docker-clean.sh
 
 # 在运行中的容器中执行命令
 .PHONY: exec
@@ -212,8 +160,8 @@ images:
 
 # 重新构建镜像
 .PHONY: rebuild
-rebuild: clean build
-	@echo "$(GREEN)重新构建完成$(NC)"
+rebuild:
+	@docker/scripts/build/docker-rebuild.sh
 
 # 进入容器bash
 .PHONY: bash

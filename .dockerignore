@@ -28,6 +28,11 @@ Thumbs.db
 
 # 构建产物和缓存
 build/
+devel/
+install/
+log/
+logs/
+.catkin_tools/
 dist/
 *.pyc
 __pycache__/
