@@ -28,6 +28,7 @@ IMAGE_NAME=${IMAGE_NAME:-my-dev-image}
 IMAGE_TAG=${IMAGE_TAG:-latest}
 CONTAINER_NAME=${CONTAINER_NAME:-my_dev_container}
 WORKSPACE_DIR=${WORKSPACE_DIR:-$PROJECT_ROOT}
+CONTAINER_WORKSPACE=${CONTAINER_WORKSPACE:-workspace}
 
 # 显示运行信息
 echo "========================================="
@@ -37,7 +38,7 @@ echo ""
 echo "镜像名称: ${IMAGE_NAME}:${IMAGE_TAG}"
 echo "容器名称: ${CONTAINER_NAME}"
 echo "用户信息: ${USER_NAME} (UID=${USER_UID}, GID=${USER_GID})"
-echo "工作空间: ${WORKSPACE_DIR}"
+echo "工作空间: ${WORKSPACE_DIR} -> /home/${USER_NAME}/${CONTAINER_WORKSPACE}"
 echo ""
 
 # 检查镜像是否存在
@@ -61,7 +62,7 @@ xhost +local:docker > /dev/null 2>&1 || true
 DOCKER_RUN_FLAGS=()
 
 # 基本运行参数
-DOCKER_RUN_FLAGS+=(--rm -it --name "${CONTAINER_NAME}" --user "${USER_UID}:${USER_GID}" -e DISPLAY="$DISPLAY" -w "/home/${USER_NAME}/workspace" -v "${WORKSPACE_DIR}:/home/${USER_NAME}/workspace:rw")
+DOCKER_RUN_FLAGS+=(--rm -it --name "${CONTAINER_NAME}" --user "${USER_UID}:${USER_GID}" -e DISPLAY="$DISPLAY" -w "/home/${USER_NAME}/${CONTAINER_WORKSPACE}" -v "${WORKSPACE_DIR}:/home/${USER_NAME}/${CONTAINER_WORKSPACE}:rw")
 
 # 根据主机系统选择网络模式与端口映射（可在 .env 中通过 EXTRA_PORTS 覆盖）
 if [[ "$(uname -s)" == "Darwin" ]]; then

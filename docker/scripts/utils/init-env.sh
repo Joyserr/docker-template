@@ -75,6 +75,9 @@ MOUNT_DOCKER_SOCK=false
 # 工作空间目录 (挂载到容器中的目录)
 WORKSPACE_DIR=$DETECTED_WORKSPACE
 
+# 容器内的工作目录名称 (挂载到 /home/$USER_NAME/$CONTAINER_WORKSPACE)
+CONTAINER_WORKSPACE=workspace
+
 # 共享内存大小
 SHM_SIZE=2g
 

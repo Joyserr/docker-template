@@ -43,6 +43,10 @@ export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quo
 # ============================================
 echo "Loading ROS2 environment..."
 
+# Workspace path (matched with docker-run.sh)
+export CONTAINER_WORKSPACE=${CONTAINER_WORKSPACE:-workspace}
+export WORKSPACE_PATH=~/$CONTAINER_WORKSPACE
+
 # Source ROS2 setup
 if [ -f /opt/ros/humble/setup.bash ]; then
     source /opt/ros/humble/setup.bash
@@ -57,8 +61,8 @@ else
 fi
 
 # Source workspace setup if exists
-if [ -f ~/ros2_ws/install/setup.bash ]; then
-    source ~/ros2_ws/install/setup.bash
+if [ -f ~/workspace/install/setup.bash ]; then
+    source ~/workspace/install/setup.bash
     echo "✓ ROS2 workspace environment loaded"
 else
     echo "ℹ ROS2 workspace not built yet. Run 'colcon build' to build."
@@ -79,12 +83,12 @@ alias ..='cd ..'
 alias ...='cd ../..'
 
 # ROS2 workspace aliases
-alias rw='cd ~/ros2_ws'
-alias rs='cd ~/ros2_ws/src'
-alias rb='cd ~/ros2_ws && colcon build'
-alias rbi='cd ~/ros2_ws && colcon build --symlink-install'
-alias rcb='cd ~/ros2_ws && rm -rf build install log'
-alias rtest='cd ~/ros2_ws && colcon test'
+alias rw='cd ~/workspace'
+alias rs='cd ~/workspace/src'
+alias rb='cd ~/workspace && colcon build'
+alias rbi='cd ~/workspace && colcon build --symlink-install'
+alias rcb='cd ~/workspace && rm -rf build install log'
+alias rtest='cd ~/workspace && colcon test'
 
 # ROS2 command aliases
 alias rt='ros2 topic'
@@ -107,8 +111,8 @@ alias rplist='ros2 param list'
 alias rpget='ros2 param get'
 
 # Development aliases
-alias sorc='source ~/ros2_ws/install/setup.bash'
-alias remake='cd ~/ros2_ws && rm -rf build install && colcon build'
+alias sorc='source ~/workspace/install/setup.bash'
+alias remake='cd ~/workspace && rm -rf build install && colcon build'
 
 # ============================================
 # Useful Functions
@@ -120,9 +124,9 @@ create_ros2_pkg() {
         echo "Usage: create_ros2_pkg <package_name> [dependencies...]"
         return 1
     fi
-    cd ~/ros2_ws/src
+    cd ~/workspace/src
     ros2 pkg create --build-type ament_cmake "$@"
-    cd ~/ros2_ws
+    cd ~/workspace
     colcon build
 }
 
@@ -167,7 +171,7 @@ echo "=========================================="
 echo "  ROS2 Docker Development Container"
 echo "=========================================="
 echo "  ROS Version: $ROS_DISTRO"
-echo "  Workspace:   ~/ros2_ws"
+echo "  Workspace:   ~/workspace"
 echo "  User:        $(whoami)"
 echo "=========================================="
 echo ""

@@ -43,6 +43,10 @@ export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quo
 # ============================================
 echo "Loading ROS1 Noetic environment..."
 
+# Workspace path (matched with docker-run.sh)
+export CONTAINER_WORKSPACE=${CONTAINER_WORKSPACE:-workspace}
+export WORKSPACE_PATH=~/$CONTAINER_WORKSPACE
+
 # Source ROS setup
 if [ -f /opt/ros/noetic/setup.bash ]; then
     source /opt/ros/noetic/setup.bash
@@ -50,8 +54,8 @@ if [ -f /opt/ros/noetic/setup.bash ]; then
 fi
 
 # Source workspace setup if exists
-if [ -f ~/catkin_ws/devel/setup.bash ]; then
-    source ~/catkin_ws/devel/setup.bash
+if [ -f ~/workspace/devel/setup.bash ]; then
+    source ~/workspace/devel/setup.bash
     echo "✓ Catkin workspace environment loaded"
 else
     echo "ℹ Catkin workspace not built yet. Run 'catkin_make' to build."
@@ -75,11 +79,11 @@ alias ..='cd ..'
 alias ...='cd ../..'
 
 # ROS1 workspace aliases
-alias cw='cd ~/catkin_ws'
-alias cs='cd ~/catkin_ws/src'
-alias cm='cd ~/catkin_ws && catkin_make'
-alias cb='cd ~/catkin_ws && catkin build'
-alias cclean='cd ~/catkin_ws && rm -rf build devel'
+alias cw='cd ~/workspace'
+alias cs='cd ~/workspace/src'
+alias cm='cd ~/workspace && catkin_make'
+alias cb='cd ~/workspace && catkin build'
+alias cclean='cd ~/workspace && rm -rf build devel'
 
 # ROS1 command aliases
 alias rt='rostopic'
@@ -95,8 +99,8 @@ alias rr='rosrun'
 alias rk='rospack'
 
 # Development aliases
-alias soc='source ~/catkin_ws/devel/setup.bash'
-alias remake='cd ~/catkin_ws && catkin_make clean && catkin_make'
+alias soc='source ~/workspace/devel/setup.bash'
+alias remake='cd ~/workspace && catkin_make clean && catkin_make'
 
 # ============================================
 # Useful Functions
@@ -108,9 +112,9 @@ create_ros1_pkg() {
         echo "Usage: create_ros1_pkg <package_name> [dependencies...]"
         return 1
     fi
-    cd ~/catkin_ws/src
+    cd ~/workspace/src
     catkin_create_pkg "$@"
-    cd ~/catkin_ws
+    cd ~/workspace
     catkin_make
 }
 
@@ -173,7 +177,7 @@ echo "=========================================="
 echo "  ROS1 Docker Development Container"
 echo "=========================================="
 echo "  ROS Version: $ROS_DISTRO"
-echo "  Workspace:   ~/catkin_ws"
+echo "  Workspace:   ~/workspace"
 echo "  User:        $(whoami)"
 echo "=========================================="
 echo ""

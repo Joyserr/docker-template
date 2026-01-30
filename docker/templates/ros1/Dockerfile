@@ -73,8 +73,8 @@ RUN pip3 install --user --no-cache-dir -r /tmp/requirements.txt || true && \
     rm /tmp/requirements.txt
 
 # 设置ROS工作空间
-RUN mkdir -p ~/catkin_ws/src
-WORKDIR /home/${USER_NAME}/catkin_ws
+RUN mkdir -p ~/workspace/src
+WORKDIR /home/${USER_NAME}/workspace
 
 # 复制自定义 bashrc 配置
 COPY --chown=${USER_NAME}:${USER_NAME} docker/config/bashrc /home/${USER_NAME}/.bashrc_docker
