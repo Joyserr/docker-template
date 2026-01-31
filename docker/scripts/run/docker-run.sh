@@ -11,12 +11,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 source "$SCRIPT_DIR/../utils/common.sh"
 
 # 加载环境变量
-ENV_FILE="$PROJECT_ROOT/docker/config/.env"
-if [ -f "$ENV_FILE" ]; then
-    source "$ENV_FILE"
-else
-    echo "错误: 找不到配置文件 $ENV_FILE"
-    echo "请先运行 'make init' 初始化环境"
+if ! load_env_vars; then
     exit 1
 fi
 
@@ -27,7 +22,7 @@ USER_GID=${USER_GID:-$(id -g)}
 IMAGE_NAME=${IMAGE_NAME:-my-dev-image}
 IMAGE_TAG=${IMAGE_TAG:-latest}
 CONTAINER_NAME=${CONTAINER_NAME:-my_dev_container}
-WORKSPACE_DIR=${WORKSPACE_DIR:-$PROJECT_ROOT}
+WORKSPACE_DIR=${WORKSPACE_DIR:-$(get_project_root)}
 CONTAINER_WORKSPACE=${CONTAINER_WORKSPACE:-workspace}
 
 # 显示运行信息

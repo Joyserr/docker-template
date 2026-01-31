@@ -232,41 +232,7 @@ list-platforms:
 # 构建多架构镜像
 .PHONY: build-multiarch
 build-multiarch: setup-buildx
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo "$(GREEN)构建多架构Docker镜像$(NC)"
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo "目标平台: $(TARGET_PLATFORMS)"
-	@echo "输出类型: $(BUILD_OUTPUT_TYPE)"
-	@if [ "$(BUILD_OUTPUT_TYPE)" = "registry" ]; then \
-		echo "镜像仓库: $(REGISTRY)/$(REPO_NAME)"; \
-		docker buildx build \
-			--platform $(TARGET_PLATFORMS) \
-			--builder $(BUILDER_NAME) \
-			--tag $(REGISTRY)/$(REPO_NAME):$(IMAGE_TAG) \
-			--push \
-			-f docker/Dockerfile \
-			.; \
-	elif [ "$(BUILD_OUTPUT_TYPE)" = "local" ]; then \
-		echo "输出到本地Docker镜像存储"; \
-		docker buildx build \
-			--platform $(TARGET_PLATFORMS) \
-			--builder $(BUILDER_NAME) \
-			--tag $(IMAGE_NAME):$(IMAGE_TAG) \
-			--load \
-			-f docker/Dockerfile \
-			.; \
-	elif [ "$(BUILD_OUTPUT_TYPE)" = "tar" ]; then \
-		echo "输出到tar文件: $(OUTPUT_PATH)"; \
-		mkdir -p $(OUTPUT_PATH); \
-		docker buildx build \
-			--platform $(TARGET_PLATFORMS) \
-			--builder $(BUILDER_NAME) \
-			--tag $(IMAGE_NAME):$(IMAGE_TAG) \
-			--output type=tar,dest=$(OUTPUT_PATH)/$(IMAGE_NAME)-$(IMAGE_TAG).tar \
-			-f docker/Dockerfile \
-			.; \
-	fi
-	@echo "$(GREEN)多架构镜像构建完成$(NC)"
+	@docker/scripts/docker-build-multiarch.sh
 
 # 构建AMD64镜像
 .PHONY: build-amd64

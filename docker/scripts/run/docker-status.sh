@@ -11,11 +11,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 source "$SCRIPT_DIR/../utils/common.sh"
 
 # 加载环境变量
-ENV_FILE="$PROJECT_ROOT/docker/config/.env"
-if [ -f "$ENV_FILE" ]; then
-    source "$ENV_FILE"
-else
-    print_error "找不到配置文件 $ENV_FILE"
+if ! load_env_vars; then
     exit 1
 fi
 

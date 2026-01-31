@@ -74,7 +74,10 @@ load_env_vars() {
     fi
     
     if [ -f "$env_file" ]; then
-        export $(cat "$env_file" | grep -v '^#' | xargs)
+        # 使用 set -a 自动导出变量，这种方式比 xargs 更健壮
+        set -a
+        source "$env_file"
+        set +a
         return 0
     else
         print_error "未找到环境变量文件: $env_file"
@@ -92,7 +95,9 @@ load_multiarch_env_vars() {
     fi
     
     if [ -f "$env_file" ]; then
-        export $(cat "$env_file" | grep -v '^#' | xargs)
+        set -a
+        source "$env_file"
+        set +a
         return 0
     else
         print_error "未找到多架构环境变量文件: $env_file"
