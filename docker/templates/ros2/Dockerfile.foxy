@@ -15,8 +15,14 @@ RUN sed -i 's|http://archive.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubunt
     sed -i 's|http://security.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
     sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.ustc.edu.cn/ubuntu-ports|g' /etc/apt/sources.list
 
+# 更新 ROS2 仓库 GPG 密钥（解决密钥过期问题）
+RUN apt-get update --allow-insecure-repositories && apt-get install -y curl gnupg2 ca-certificates && \
+    rm -f /usr/share/keyrings/ros-archive-keyring.gpg && \
+    curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+    rm -rf /var/lib/apt/lists/*
+
 # 更新apt源并安装基础开发工具
-RUN apt-get update && apt-get install -y \
+RUN apt-get update --allow-insecure-repositories && apt-get install -y \
     vim \
     wget \
     htop \

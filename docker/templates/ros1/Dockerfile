@@ -14,14 +14,14 @@ RUN sed -i 's|http://archive.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubunt
     sed -i 's|http://security.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
     sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.ustc.edu.cn/ubuntu-ports|g' /etc/apt/sources.list
 
-# 临时允许不安全的仓库，先安装必要工具
-RUN apt-get update --allow-insecure-repositories 2>/dev/null || apt-get update && \
-    apt-get install -y --allow-unauthenticated curl gnupg2 ca-certificates 2>/dev/null || \
-    apt-get install -y curl gnupg2 ca-certificates
+# 安装必要工具（curl, gnupg2, ca-certificates）
+RUN apt-get update --allow-insecure-repositories && \
+    apt-get install -y --allow-unauthenticated curl gnupg2 ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-# 配置ROS镜像源和新的GPG密钥
+# 配置ROS镜像源和最新的GPG密钥
 RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] https://mirrors.ustc.edu.cn/ros/ubuntu/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros1-latest.list
+    echo "deb [signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] https://mirrors.ustc.edu.cn/ros/ubuntu/ focal main" > /etc/apt/sources.list.d/ros1-latest.list
 
 # 清理并重新更新
 RUN rm -rf /var/lib/apt/lists/* && apt-get clean
