@@ -56,6 +56,10 @@ elif [ -f /opt/ros/foxy/setup.bash ]; then
     source /opt/ros/foxy/setup.bash
     echo "✓ ROS2 Foxy environment loaded"
     export ROS_DISTRO=foxy
+elif [ -f /opt/ros/jazzy/setup.bash ]; then
+    source /opt/ros/jazzy/setup.bash
+    echo "✓ ROS2 Jazzy environment loaded"
+    export ROS_DISTRO=jazzy
 else
     echo "⚠ ROS2 environment not found"
 fi

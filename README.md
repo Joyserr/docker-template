@@ -116,6 +116,7 @@ make config             # 查看当前配置
 |------|---------|---------|---------|
 | **ROS2 Humble** | ros:humble | ROS2 Humble, colcon, rviz2 | ROS2开发、机器人仿真、SLAM |
 | **ROS2 Foxy** | ros:foxy | ROS2 Foxy, colcon, rviz2 | ROS2开发、机器人仿真、SLAM |
+| **ROS2 Jazzy** | ros:jazzy | ROS2 Jazzy, colcon, rviz2 | ROS2开发、机器人仿真、SLAM |
 | **Python 3.11** | python:3.11-slim | Python 3.11, pip, jupyter, pytest | Python开发、数据科学、机器学习 |
 | **Python 3.12** | python:3.12-slim | Python 3.12, pip, jupyter, pytest | Python开发、数据科学、机器学习 |
 | **Node.js 18** | node:18-slim | Node.js 18, npm, yarn, pnpm | Web前端、Node.js后端开发 |

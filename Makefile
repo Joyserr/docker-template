@@ -183,6 +183,48 @@ config:
 	@echo "========================================="
 
 # ========================================
+# 新手友好命令
+# ========================================
+
+# 一键配置向导（新手友好）
+.PHONY: setup
+setup:
+	@chmod +x docker/scripts/setup-environment.sh
+	@docker/scripts/setup-environment.sh
+
+# 快速开始指南
+.PHONY: quick-start
+quick-start:
+	@echo "========================================="
+	@echo "快速开始指南"
+	@echo "========================================="
+	@echo ""
+	@echo "第一步：初始化环境"
+	@echo "  $$ make init"
+	@echo ""
+	@echo "第二步：选择开发环境"
+	@echo "  $$ make template-select  # 交互式选择"
+	@echo "  或"
+	@echo "  $$ make template-use TEMPLATE=ros2-humble  # 直接指定"
+	@echo ""
+	@echo "第三步：构建镜像"
+	@echo "  $$ make build"
+	@echo ""
+	@echo "第四步：启动开发环境"
+	@echo "  $$ make run"
+	@echo ""
+	@echo "快捷方式：一键完成前三步"
+	@echo "  $$ make template-run TEMPLATE=ros2-humble"
+	@echo ""
+	@echo "日常使用："
+	@echo "  停止容器：make stop"
+	@echo "  重新构建：make rebuild"
+	@echo "  查看状态：make ps"
+	@echo "  进入容器：make enter"
+	@echo ""
+	@echo "========================================="
+
+# ========================================
 # 多架构构建命令
 # ========================================
 
@@ -342,6 +384,7 @@ template-list:
 	@echo "  $(YELLOW)ros1-noetic$(NC)      - ROS1 Noetic (Ubuntu 20.04)"
 	@echo "  $(YELLOW)ros2-humble$(NC)     - ROS2 Humble (Ubuntu 22.04)"
 	@echo "  $(YELLOW)ros2-foxy$(NC)       - ROS2 Foxy (Ubuntu 20.04)"
+	@echo "  $(YELLOW)ros2-jazzy$(NC)      - ROS2 Jazzy (Ubuntu 24.04)"
 	@echo "  $(YELLOW)python-3.11$(NC)     - Python 3.11 开发环境"
 	@echo "  $(YELLOW)python-3.12$(NC)     - Python 3.12 开发环境"
 	@echo "  $(YELLOW)nodejs-18$(NC)        - Node.js 18 开发环境"
@@ -367,7 +410,7 @@ template-use:
 		echo "$(RED)错误：请指定模板名称$(NC)"; \
 		echo "用法: make template-use TEMPLATE=<template_name>"; \
 		echo "可用模板："; \
-		echo "  ros1-noetic, ros2-humble, ros2-foxy, python-3.11, python-3.12"; \
+		echo "  ros1-noetic, ros2-humble, ros2-foxy, ros2-jazzy, python-3.11, python-3.12"; \
 		echo "  nodejs-18, nodejs-20, java-11, java-17, go-22, ubuntu"; \
 	else \
 		docker/scripts/template-selector.sh -c $(TEMPLATE); \

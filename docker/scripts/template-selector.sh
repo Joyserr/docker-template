@@ -19,6 +19,7 @@ TEMPLATES_DIR="docker/templates"
 ROS1_NOETIC="ROS1 Noetic (Ubuntu 20.04)"
 ROS2_HUMBLE="ROS2 Humble (Ubuntu 22.04)"
 ROS2_FOXY="ROS2 Foxy (Ubuntu 20.04)"
+ROS2_JAZZY="ROS2 Jazzy (Ubuntu 24.04)"
 PYTHON_311="Python 3.11 开发环境"
 PYTHON_312="Python 3.12 开发环境"
 NODEJS_18="Node.js 18 开发环境"
@@ -59,6 +60,7 @@ list_templates() {
     echo -e "  ${GREEN}ros1-noetic${NC}      - ${YELLOW}$ROS1_NOETIC${NC}"
     echo -e "  ${GREEN}ros2-humble${NC}     - ${YELLOW}$ROS2_HUMBLE${NC}"
     echo -e "  ${GREEN}ros2-foxy${NC}       - ${YELLOW}$ROS2_FOXY${NC}"
+    echo -e "  ${GREEN}ros2-jazzy${NC}      - ${YELLOW}$ROS2_JAZZY${NC}"
     echo -e "  ${GREEN}python-3.11${NC}      - ${YELLOW}$PYTHON_311${NC}"
     echo -e "  ${GREEN}python-3.12${NC}      - ${YELLOW}$PYTHON_312${NC}"
     echo -e "  ${GREEN}nodejs-18${NC}        - ${YELLOW}$NODEJS_18${NC}"
@@ -101,6 +103,11 @@ show_template_info() {
             echo "  名称：${GREEN}ros2-foxy${NC}"
             echo "  描述：${YELLOW}$ROS2_FOXY${NC}"
             check_template_file "$TEMPLATES_DIR/ros2/Dockerfile.foxy"
+            ;;
+        "ros2-jazzy")
+            echo "  名称：${GREEN}ros2-jazzy${NC}"
+            echo "  描述：${YELLOW}$ROS2_JAZZY${NC}"
+            check_template_file "$TEMPLATES_DIR/ros2/Dockerfile.jazzy"
             ;;
         "python-3.11")
             echo "  名称：${GREEN}python-3.11${NC}"
@@ -169,18 +176,19 @@ select_template() {
     echo -e "  ${GREEN}1${NC}. ${YELLOW}ros1-noetic${NC}     - ${BLUE}$ROS1_NOETIC${NC}"
     echo -e "  ${GREEN}2${NC}. ${YELLOW}ros2-humble${NC}     - ${BLUE}$ROS2_HUMBLE${NC}"
     echo -e "  ${GREEN}3${NC}. ${YELLOW}ros2-foxy${NC}       - ${BLUE}$ROS2_FOXY${NC}"
-    echo -e "  ${GREEN}4${NC}. ${YELLOW}python-3.11${NC}      - ${BLUE}$PYTHON_311${NC}"
-    echo -e "  ${GREEN}5${NC}. ${YELLOW}python-3.12${NC}      - ${BLUE}$PYTHON_312${NC}"
-    echo -e "  ${GREEN}6${NC}. ${YELLOW}nodejs-18${NC}        - ${BLUE}$NODEJS_18${NC}"
-    echo -e "  ${GREEN}7${NC}. ${YELLOW}nodejs-20${NC}        - ${BLUE}$NODEJS_20${NC}"
-    echo -e "  ${GREEN}8${NC}. ${YELLOW}java-11${NC}          - ${BLUE}$JAVA_11${NC}"
-    echo -e "  ${GREEN}9${NC}. ${YELLOW}java-17${NC}          - ${BLUE}$JAVA_17${NC}"
-    echo -e "  ${GREEN}10${NC}. ${YELLOW}go-22${NC}            - ${BLUE}$GO_22${NC}"
-    echo -e "  ${GREEN}11${NC}. ${YELLOW}ubuntu${NC}           - ${BLUE}$UBUNTU${NC}"
-    
+    echo -e "  ${GREEN}4${NC}. ${YELLOW}ros2-jazzy${NC}      - ${BLUE}$ROS2_JAZZY${NC}"
+    echo -e "  ${GREEN}5${NC}. ${YELLOW}python-3.11${NC}      - ${BLUE}$PYTHON_311${NC}"
+    echo -e "  ${GREEN}6${NC}. ${YELLOW}python-3.12${NC}      - ${BLUE}$PYTHON_312${NC}"
+    echo -e "  ${GREEN}7${NC}. ${YELLOW}nodejs-18${NC}        - ${BLUE}$NODEJS_18${NC}"
+    echo -e "  ${GREEN}8${NC}. ${YELLOW}nodejs-20${NC}        - ${BLUE}$NODEJS_20${NC}"
+    echo -e "  ${GREEN}9${NC}. ${YELLOW}java-11${NC}          - ${BLUE}$JAVA_11${NC}"
+    echo -e "  ${GREEN}10${NC}. ${YELLOW}java-17${NC}          - ${BLUE}$JAVA_17${NC}"
+    echo -e "  ${GREEN}11${NC}. ${YELLOW}go-22${NC}            - ${BLUE}$GO_22${NC}"
+    echo -e "  ${GREEN}12${NC}. ${YELLOW}ubuntu${NC}           - ${BLUE}$UBUNTU${NC}"
+
     echo ""
-    read -p "请输入模板编号 (1-11) [输入q退出]: " choice
-    
+    read -p "请输入模板编号 (1-12) [输入q退出]: " choice
+
     case $choice in
         1)
             copy_template "ros1-noetic"
@@ -192,27 +200,30 @@ select_template() {
             copy_template "ros2-foxy"
             ;;
         4)
-            copy_template "python-3.11"
+            copy_template "ros2-jazzy"
             ;;
         5)
-            copy_template "python-3.12"
+            copy_template "python-3.11"
             ;;
         6)
-            copy_template "nodejs-18"
+            copy_template "python-3.12"
             ;;
         7)
-            copy_template "nodejs-20"
+            copy_template "nodejs-18"
             ;;
         8)
-            copy_template "java-11"
+            copy_template "nodejs-20"
             ;;
         9)
-            copy_template "java-17"
+            copy_template "java-11"
             ;;
         10)
-            copy_template "go-22"
+            copy_template "java-17"
             ;;
         11)
+            copy_template "go-22"
+            ;;
+        12)
             copy_template "ubuntu"
             ;;
         q|Q)
@@ -255,6 +266,11 @@ copy_template() {
             ;;
         "ros2-foxy")
             source_file="$TEMPLATES_DIR/ros2/Dockerfile.foxy"
+            bashrc_file="$TEMPLATES_DIR/ros2/bashrc"
+            requirements_file="$TEMPLATES_DIR/ros2/requirements.txt"
+            ;;
+        "ros2-jazzy")
+            source_file="$TEMPLATES_DIR/ros2/Dockerfile.jazzy"
             bashrc_file="$TEMPLATES_DIR/ros2/bashrc"
             requirements_file="$TEMPLATES_DIR/ros2/requirements.txt"
             ;;
