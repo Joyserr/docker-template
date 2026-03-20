@@ -24,10 +24,10 @@ RUN if [ "$USE_CN_MIRROR" = "true" ]; then \
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # 更新 ROS2 仓库 GPG 密钥（解决密钥过期问题）
-RUN apt-get update && apt-get install -y curl gnupg2 && \
-    rm -f /usr/share/keyrings/ros-archive-keyring.gpg && \
-    curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && apt-get install -y curl gnupg2 && \
+#    rm -f /usr/share/keyrings/ros-archive-keyring.gpg && \
+#    curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+#    rm -rf /var/lib/apt/lists/*
 
 # 合并所有 apt 安装步骤，减少层数并优化缓存
 RUN apt-get update && apt-get install -y \
@@ -51,7 +51,6 @@ RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-tf2-tools \
     ros-${ROS_DISTRO}-tf2-sensor-msgs \
     ros-${ROS_DISTRO}-tf2-geometry-msgs \
-    ros-${ROS_DISTRO}-nav2 \
     ros-${ROS_DISTRO}-launch-xml \
     ros-${ROS_DISTRO}-launch-yaml \
     && rm -rf /var/lib/apt/lists/*
@@ -61,12 +60,12 @@ ARG USER_NAME=sysadmin
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-RUN groupadd -g ${USER_GID} ${USER_NAME} || true && \
-    useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash ${USER_NAME} && \
-    echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+#RUN groupadd -g ${USER_GID} ${USER_NAME} || true && \
+#    useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash ${USER_NAME} && \
+#    echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # 切换到用户
-USER ${USER_NAME}
+# USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
 # 安装 Python 依赖（在创建工作空间之前）
