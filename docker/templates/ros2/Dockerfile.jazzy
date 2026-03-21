@@ -60,12 +60,16 @@ ARG USER_NAME=sysadmin
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-#RUN groupadd -g ${USER_GID} ${USER_NAME} || true && \
-#    useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash ${USER_NAME} && \
-#    echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# 先删除基础镜像中已存在的 UID 1000 用户（通常是 ubuntu 用户）
+RUN userdel -r ubuntu 2>/dev/null || true
+
+# 创建新用户
+RUN groupadd -g ${USER_GID} ${USER_NAME} 2>/dev/null || true && \
+    useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash ${USER_NAME} && \
+    echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/${USER_NAME}
 
 # 切换到用户
-# USER ${USER_NAME}
+USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
 # 安装 Python 依赖（在创建工作空间之前）
