@@ -1,47 +1,38 @@
-# ROS1 Noetic Docker开发环境模板
+# ROS1 Noetic Development Environment
 ARG ROS_DISTRO=noetic
 FROM ros:${ROS_DISTRO}
 
-# 避免交互式提示
+# Build arg: set to "true" for Chinese apt mirror
+ARG USE_CN_MIRROR=true
+
+# Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 设置时区为中国时区
+# Set timezone
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone
 
-# 配置国内镜像源（Ubuntu）
-RUN sed -i 's|http://archive.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
-    sed -i 's|http://security.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
-    sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.ustc.edu.cn/ubuntu-ports|g' /etc/apt/sources.list
+# Configure apt mirror (optional, for faster downloads in China)
+RUN if [ "$USE_CN_MIRROR" = "true" ]; then \
+        sed -i 's|http://archive.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
+        sed -i 's|http://security.ubuntu.com/ubuntu|https://mirrors.ustc.edu.cn/ubuntu|g' /etc/apt/sources.list && \
+        sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.ustc.edu.cn/ubuntu-ports|g' /etc/apt/sources.list; \
+    fi
 
-# 安装必要工具（curl, gnupg2, ca-certificates）
-RUN apt-get update --allow-insecure-repositories && \
-    apt-get install -y --allow-unauthenticated curl gnupg2 ca-certificates && \
+# Install prerequisites and refresh ROS GPG key
+RUN apt-get update && apt-get install -y curl gnupg2 ca-certificates && \
+    rm -f /usr/share/keyrings/ros-archive-keyring.gpg && \
+    curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+         -o /usr/share/keyrings/ros-archive-keyring.gpg && \
     rm -rf /var/lib/apt/lists/*
 
-# 配置ROS镜像源和最新的GPG密钥
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] https://mirrors.ustc.edu.cn/ros/ubuntu/ focal main" > /etc/apt/sources.list.d/ros1-latest.list
-
-# 清理并重新更新
-RUN rm -rf /var/lib/apt/lists/* && apt-get clean
-
-# 更新apt源并安装基础开发工具
+# Install system packages and ROS1 development tools
 RUN apt-get update && apt-get install -y \
-    vim \
-    wget \
-    htop \
-    tmux \
-    build-essential \
-    cmake \
-    git \
-    python3-pip \
-    python3-catkin-tools \
-    python3-rosdep \
-    python3-rosinstall \
-    python3-rosinstall-generator \
-    python3-wstool \
-    python3-vcstool \
+    vim wget htop tmux \
+    build-essential cmake git curl \
+    python3-pip python3-catkin-tools python3-rosdep \
+    python3-rosinstall python3-rosinstall-generator python3-wstool python3-vcstool \
+    bash-completion \
     ros-${ROS_DISTRO}-rqt \
     ros-${ROS_DISTRO}-rqt-common-plugins \
     ros-${ROS_DISTRO}-rviz \
@@ -51,10 +42,9 @@ RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-pcl-conversions \
     ros-${ROS_DISTRO}-pcl-ros \
     ros-${ROS_DISTRO}-image-geometry \
-    bash-completion \
     && rm -rf /var/lib/apt/lists/*
 
-# 创建用户（与主机用户保持一致，避免权限问题）
+# Create user (match host UID/GID to avoid permission issues)
 ARG USER_NAME=sysadmin
 ARG USER_UID=1000
 ARG USER_GID=1000
@@ -63,31 +53,22 @@ RUN groupadd -g ${USER_GID} ${USER_NAME} || true && \
     useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash ${USER_NAME} && \
     echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# 切换到用户
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
-# 安装 Python 依赖（在创建工作空间之前）
+# Install Python dependencies
 COPY --chown=${USER_NAME}:${USER_NAME} docker/requirements.txt /tmp/requirements.txt
 RUN pip3 install --user --no-cache-dir -r /tmp/requirements.txt || true && \
     rm /tmp/requirements.txt
 
-# 设置ROS工作空间
+# Set up workspace
 RUN mkdir -p ~/workspace/src
 WORKDIR /home/${USER_NAME}/workspace
 
-# 复制自定义 bashrc 配置
+# Copy custom bashrc configuration
 COPY --chown=${USER_NAME}:${USER_NAME} docker/config/bashrc /home/${USER_NAME}/.bashrc_docker
 
-# 配置ROS环境（加载 Docker 专用配置）
-RUN echo "# Load Docker-specific ROS configuration" >> ~/.bashrc && \
-    echo "if [ -f ~/.bashrc_docker ]; then" >> ~/.bashrc && \
-    echo "    source ~/.bashrc_docker" >> ~/.bashrc && \
-    echo "fi" >> ~/.bashrc
+# Load Docker-specific configuration on shell start
+RUN echo "if [ -f ~/.bashrc_docker ]; then source ~/.bashrc_docker; fi" >> ~/.bashrc
 
-# 初始化rosdep
-# RUN sudo rosdep init || true && \
-#     rosdep update
-
-# 默认启动bash
 CMD ["/bin/bash"]
