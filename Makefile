@@ -189,7 +189,7 @@ up:
 .PHONY: run
 run:
 	@xhost +local:docker 2>/dev/null || true
-	$(DC) run --rm dev
+	$(DC) run --rm --name $(CONTAINER_NAME) dev
 
 .PHONY: shell
 shell: enter
