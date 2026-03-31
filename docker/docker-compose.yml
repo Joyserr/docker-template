@@ -23,6 +23,8 @@ services:
     volumes:
       - ${WORKSPACE_DIR:-..}:/home/${USER_NAME:-user}/${CONTAINER_WORKSPACE:-workspace}
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    env_file:
+      - config/env.custom
     environment:
       - DISPLAY=${DISPLAY:-:0}
       - QT_X11_NO_MITSHM=1

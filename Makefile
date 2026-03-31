@@ -55,7 +55,9 @@ help:
 	@echo "    make list        List available templates"
 	@echo "    make use T=xx    Select template"
 	@echo ""
-	@echo "  Config: docker/config/.env"
+	@echo "  Config:"
+	@echo "    docker/config/.env         System config (user, image, workspace)"
+	@echo "    docker/config/env.custom    Custom env vars (injected at runtime)"
 
 # ============================================================
 # Initialize
@@ -80,6 +82,16 @@ init:
 		'WORKSPACE_DIR=$(CURDIR)' \
 		'CONTAINER_WORKSPACE=workspace' \
 		> docker/config/.env
+	@if [ ! -f docker/config/env.custom ]; then \
+		printf '%s\n' \
+			'# Custom environment variables for the container' \
+			'# Add KEY=VALUE lines here; they are injected at runtime (no rebuild needed).' \
+			'# Example:' \
+			'# ROS_DOMAIN_ID=42' \
+			'# MY_APP_DEBUG=true' \
+			> docker/config/env.custom; \
+		echo "✓ Created: docker/config/env.custom"; \
+	fi
 	@echo "✓ Config generated: docker/config/.env"
 	@echo ""
 	@cat docker/config/.env
