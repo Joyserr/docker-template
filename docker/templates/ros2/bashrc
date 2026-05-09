@@ -43,10 +43,6 @@ export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quo
 # ============================================
 echo "Loading ROS2 environment..."
 
-# Workspace path (matched with docker-run.sh)
-export CONTAINER_WORKSPACE=${CONTAINER_WORKSPACE:-workspace}
-export WORKSPACE_PATH=~/$CONTAINER_WORKSPACE
-
 # Source ROS2 setup
 if [ -f /opt/ros/humble/setup.bash ]; then
     source /opt/ros/humble/setup.bash
@@ -71,10 +67,6 @@ if [ -f ~/workspace/install/setup.bash ]; then
 else
     echo "ℹ ROS2 workspace not built yet. Run 'colcon build' to build."
 fi
-
-# ROS2 Network Configuration
-export ROS_HOSTNAME=localhost
-export ROS_DOMAIN_ID=0
 
 # ============================================
 # Useful Aliases

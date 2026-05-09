@@ -2,6 +2,6 @@
 install
 devel
 build
-logs
+log
 src
 .git

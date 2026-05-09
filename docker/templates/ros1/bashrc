@@ -43,10 +43,6 @@ export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quo
 # ============================================
 echo "Loading ROS1 Noetic environment..."
 
-# Workspace path (matched with docker-run.sh)
-export CONTAINER_WORKSPACE=${CONTAINER_WORKSPACE:-workspace}
-export WORKSPACE_PATH=~/$CONTAINER_WORKSPACE
-
 # Source ROS setup
 if [ -f /opt/ros/noetic/setup.bash ]; then
     source /opt/ros/noetic/setup.bash
@@ -60,13 +56,6 @@ if [ -f ~/workspace/devel/setup.bash ]; then
 else
     echo "ℹ Catkin workspace not built yet. Run 'catkin_make' to build."
 fi
-
-# ROS Network Configuration
-export ROS_HOSTNAME=localhost
-export ROS_MASTER_URI=http://localhost:11311
-
-# ROS1 Python path
-export PYTHONPATH="/opt/ros/noetic/lib/python3/dist-packages:$PYTHONPATH"
 
 # ============================================
 # Useful Aliases
