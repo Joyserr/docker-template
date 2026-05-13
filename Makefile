@@ -120,6 +120,9 @@ list:
 	@echo "    java-17          Java 17"
 	@echo "    go-22            Go 1.22"
 	@echo ""
+	@echo "  Services:"
+	@echo "    airflow-3        Apache Airflow 3.x (official image)"
+	@echo ""
 	@echo "  System:"
 	@echo "    ubuntu           Ubuntu 22.04 general-purpose"
 	@echo ""
@@ -145,6 +148,7 @@ else
 	  java-11)       df=java/Dockerfile.11;       dir=java;; \
 	  java-17)       df=java/Dockerfile.17;       dir=java;; \
 	  go-22)         df=go/Dockerfile.22;         dir=go;; \
+	  airflow-3)     df=airflow/Dockerfile;       dir=airflow;; \
 	  ubuntu)        df=ubuntu/Dockerfile;        dir=ubuntu;; \
 	  *) echo "Unknown template: $$tpl"; $(MAKE) --no-print-directory list; exit 1;; \
 	esac; \

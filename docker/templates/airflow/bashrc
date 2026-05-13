@@ -1,0 +1,50 @@
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+shopt -s checkwinsize
+
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+fi
+
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+export PATH="$HOME/.local/bin:/home/airflow/.local/bin:/opt/airflow/.local/bin:$PATH"
+
+_airflow_py_ver="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || true)"
+if [ -n "$_airflow_py_ver" ]; then
+    _airflow_site="/home/airflow/.local/lib/python${_airflow_py_ver}/site-packages"
+    if [ -d "$_airflow_site" ]; then
+        export PYTHONPATH="$_airflow_site:${PYTHONPATH}"
+    fi
+fi
+unset _airflow_py_ver _airflow_site
+
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+alias aw='cd ~/workspace'
+alias ah='cd "$AIRFLOW_HOME"'
+alias av='airflow version'
+alias ai='airflow info'
+alias adb='airflow db migrate'
+alias areset='airflow db reset -y'
+alias aweb='airflow webserver'
+alias asched='airflow scheduler'
+
+PS1='\[\033[01;32m\](Airflow)\[\033[00m\] \[\033[01;34m\]\u@\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
